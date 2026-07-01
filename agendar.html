@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Agendar · LUMÉ Beauty Room</title>
 <link rel="icon" href="logo.png">
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -86,6 +89,22 @@
     </div>
   </aside>
 
+  <!-- Tarjeta wallet: cita confirmada -->
+  <div class="pass-mask" id="passMask">
+    <div class="pass-box">
+      <img id="passImg" class="pass-img" alt="Cita confirmada">
+      <div class="pass-actions">
+        <button class="btn soft" id="passDownload">⬇ Descargar</button>
+        <button class="btn" id="passWhats">Enviar por WhatsApp</button>
+      </div>
+      <p style="margin-top:14px">
+        <a href="index.html" class="muted" style="text-decoration:none">Volver al inicio</a>
+        &nbsp;·&nbsp;
+        <a href="#" id="passAgain" class="muted" style="text-decoration:none">Agendar otra</a>
+      </p>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
@@ -95,7 +114,7 @@
   <script>
     Data.init(); // conecta con Firebase (o modo local si no hay internet)
     document.getElementById("waBtn").href = waLink(CONFIG.whatsapp, "¡Hola LUMÉ! Quiero agendar una cita ✨");
-    document.getElementById("igBtn").href = "https://instagram.com/" + CONFIG.instagram;
+    document.getElementById("igBtn").href = igLink(CONFIG.instagram);
 
     // ---- estado del carrito: { serviceId: qty } ----
     const cart = {};
@@ -265,9 +284,116 @@
       confirmBtn.textContent = "Agendando…";
       try{ await Promise.race([ Data.put("bookings", booking), wait(5000) ]); }
       catch(e){ /* si algo falla, Data ya respaldó en local */ }
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = "Agendar";
 
-      // ir a Administrador
-      window.location.href = "admin.html?new=" + booking.id;
+      // mostrar tarjeta de confirmación tipo wallet
+      closeDrawer();
+      await showPass(booking);
+
+      // limpiar carrito y formulario para una siguiente cita
+      Object.keys(cart).forEach(k=> delete cart[k]);
+      SERVICES.forEach(g => g.items.forEach(it => syncCard(it.id)));
+      syncCart();
+      ["cName","cPhone","cNote","cDate","cTime"].forEach(id=> document.getElementById(id).value="");
+    });
+
+    /* ---------- Tarjeta wallet de confirmación ---------- */
+    const DAYS_FULL = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+    function loadImg(src){ return new Promise((res,rej)=>{ const im=new Image(); im.crossOrigin="anonymous"; im.onload=()=>res(im); im.onerror=rej; im.src=src; }); }
+    function roundRectPath(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+    function dline(ctx,x1,x2,yy){ ctx.save(); ctx.strokeStyle="#cbc5b6"; ctx.lineWidth=2; ctx.setLineDash([7,7]); ctx.beginPath(); ctx.moveTo(x1,yy); ctx.lineTo(x2,yy); ctx.stroke(); ctx.restore(); }
+    function label(ctx,txt,x,y){ ctx.save(); ctx.fillStyle="#8a877d"; ctx.font="600 16px 'Jost',Arial,sans-serif"; ctx.textAlign="left"; ctx.fillText(txt,x,y); ctx.restore(); }
+
+    async function makeWalletCard(bk){
+      const W=720, r=44, lw=320;
+      try{ await Promise.race([document.fonts.ready, new Promise(r=>setTimeout(r,1500))]); }catch(e){}
+      const logo=await loadImg("logo.png").catch(()=>null);
+      const lh = logo ? lw*(logo.naturalHeight/logo.naturalWidth) : 100;
+      const N = bk.items.length;
+      const H = Math.round(80 + lh + 8 + 46 + 44 + 54 + 44 + 64 + 40 + 34 + 56 + 40 + 36*N + 20 + 54 + 32 + 40 + 46);
+      const cv=document.createElement("canvas"); cv.width=W; cv.height=H;
+      const ctx=cv.getContext("2d");
+
+      ctx.clearRect(0,0,W,H);
+      roundRectPath(ctx,0,0,W,H,r); ctx.save(); ctx.clip();
+      ctx.fillStyle="#efece4"; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle="#141311"; ctx.fillRect(0,0,W,14);
+      const cx=W/2; let y=80;
+
+      if(logo){ ctx.drawImage(logo,(W-lw)/2,y,lw,lh); y+=lh+8; }
+      else { ctx.fillStyle="#141311"; ctx.textAlign="center"; ctx.font="700 46px 'Archivo Black',Arial,sans-serif"; ctx.fillText(CONFIG.businessName,cx,y+50); y+=100; }
+
+      // check verde
+      ctx.fillStyle="#2e7d54"; ctx.beginPath(); ctx.arc(cx,y+4,17,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle="#fff"; ctx.lineWidth=4; ctx.lineCap="round";
+      ctx.beginPath(); ctx.moveTo(cx-8,y+4); ctx.lineTo(cx-2,y+10); ctx.lineTo(cx+9,y-4); ctx.stroke();
+      y+=46;
+      ctx.fillStyle="#6f6d64"; ctx.textAlign="center"; ctx.font="600 22px 'Jost',Arial,sans-serif";
+      ctx.fillText("CITA CONFIRMADA", cx, y); y+=44;
+      dline(ctx,60,W-60,y); y+=54;
+
+      ctx.textAlign="left";
+      label(ctx,"NOMBRE",64,y); y+=44;
+      ctx.fillStyle="#141311"; ctx.font="700 42px 'Archivo Black',Arial,sans-serif"; ctx.fillText(bk.client.name,64,y); y+=64;
+
+      const dt=new Date(bk.date+"T00:00:00");
+      const dayName=DAYS_FULL[dt.getDay()];
+      const dateStr=dt.toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"});
+      label(ctx,"DÍA",64,y); label(ctx,"HORA",W/2+40,y); y+=40;
+      ctx.fillStyle="#141311"; ctx.font="500 28px 'Jost',Arial,sans-serif"; ctx.fillText(dayName,64,y);
+      ctx.font="700 36px 'Archivo Black',Arial,sans-serif"; ctx.fillText(bk.time||"",W/2+40,y);
+      y+=34; ctx.fillStyle="#6f6d64"; ctx.font="400 22px 'Jost',Arial,sans-serif"; ctx.fillText(dateStr,64,y);
+      y+=56;
+
+      label(ctx,"SERVICIOS",64,y); y+=40;
+      ctx.fillStyle="#141311"; ctx.font="400 25px 'Jost',Arial,sans-serif";
+      bk.items.forEach(it=>{ ctx.fillText(`•  ${it.qty}× ${it.name}`,64,y); y+=36; });
+      y+=20;
+
+      dline(ctx,40,W-40,y);
+      ctx.save(); ctx.globalCompositeOperation="destination-out";
+      ctx.beginPath(); ctx.arc(0,y,24,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(W,y,24,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+      y+=54;
+
+      ctx.textAlign="center"; ctx.fillStyle="#6f6d64"; ctx.font="400 21px 'Jost',Arial,sans-serif";
+      ctx.fillText("Presenta esta tarjeta al llegar", cx, y); y+=32;
+      const ig=(CONFIG.instagram||"").replace(/^https?:\/\/(www\.)?instagram\.com\//i,"").replace(/^@/,"").replace(/\/$/,"");
+      if(ig){ ctx.fillStyle="#141311"; ctx.font="600 22px 'Jost',Arial,sans-serif"; ctx.fillText("@"+ig, cx, y); }
+
+      ctx.restore();
+      return cv.toDataURL("image/png");
+    }
+
+    let passUrl=null, passBk=null;
+    async function showPass(bk){
+      passBk=bk;
+      try{ passUrl=await makeWalletCard(bk); }
+      catch(e){ toast("Cita guardada ✓"); return; }
+      document.getElementById("passImg").src=passUrl;
+      document.getElementById("passMask").classList.add("open");
+    }
+    function downloadPass(){
+      if(!passUrl) return;
+      const a=document.createElement("a");
+      a.href=passUrl; a.download=`cita-${(passBk.client.name||"lume").replace(/\s+/g,"_")}.png`;
+      document.body.appendChild(a); a.click(); setTimeout(()=>document.body.removeChild(a),800);
+    }
+    document.getElementById("passDownload").addEventListener("click", downloadPass);
+    document.getElementById("passWhats").addEventListener("click", ()=>{
+      if(!passBk) return;
+      downloadPass();
+      const dt=new Date(passBk.date+"T00:00:00");
+      const txt=`✨ ¡Cita confirmada en ${CONFIG.businessName}!\n\n`+
+        `👤 ${passBk.client.name}\n📅 ${DAYS_FULL[dt.getDay()]} ${passBk.date.split("-").reverse().join("/")}\n`+
+        `🕐 ${passBk.time}\n💅 ${passBk.items.map(i=>i.name).join(", ")}\n\n(Te comparto tu tarjeta de confirmación 📎)`;
+      window.open(waLink(passBk.client.phone||CONFIG.whatsapp, txt), "_blank");
+    });
+    document.getElementById("passAgain").addEventListener("click", (e)=>{
+      e.preventDefault();
+      document.getElementById("passMask").classList.remove("open");
     });
 
     // toast
