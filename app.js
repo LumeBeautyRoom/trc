@@ -15,7 +15,7 @@ const CONFIG = {
   instagram: "lume.trc",
 
   // === ADMINISTRADOR ===
-  adminPassword: "lume2026",   // cámbiala por una contraseña propia
+  adminPassword: "camis20",   // cámbiala por una contraseña propia
 
   // === NEGOCIO (aparece en el ticket) ===
   businessName: "LUMÉ Beauty Room",
