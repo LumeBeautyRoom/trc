@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Administrador · LUMÉ Beauty Room</title>
+<link rel="icon" href="logo.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ====================== GATE / LOGIN ====================== -->
+<div class="gate" id="gate">
+  <div class="box">
+    <img src="logo.png" alt="LUMÉ Beauty Room">
+    <h3 class="display" style="font-size:1.3rem;margin-bottom:6px">ADMINISTRADOR</h3>
+    <p class="muted" style="margin:0 0 18px;font-size:.9rem">Ingresa la contraseña para continuar</p>
+    <div class="field">
+      <input class="input" id="pass" type="password" placeholder="Contraseña" style="text-align:center">
+      <div class="err-msg" id="passErr">Contraseña incorrecta.</div>
+    </div>
+    <button class="btn block" id="loginBtn">Entrar</button>
+    <p style="margin-top:16px"><a href="index.html" class="muted" style="font-size:.85rem">← Volver al inicio</a></p>
+  </div>
+</div>
+
+<!-- ====================== SHELL ====================== -->
+<div class="admin-shell" id="shell" style="display:none">
+  <div class="admin-top">
+    <a href="index.html"><img src="logo.png" alt="LUMÉ"></a>
+    <nav class="tabs">
+      <button class="tab active" data-panel="agenda">Agenda</button>
+      <button class="tab" data-panel="caja">Caja</button>
+      <button class="tab" data-panel="reportes">Reportes</button>
+      <button class="tab" data-panel="inventario">Inventario</button>
+    </nav>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span id="connDot" style="font-size:.8rem;font-weight:600;letter-spacing:.3px;color:var(--muted)">●</span>
+      <button class="btn ghost sm" id="logoutBtn">Salir</button>
+    </div>
+  </div>
+
+  <main class="admin-main">
+
+    <!-- ============ AGENDA ============ -->
+    <section class="panel active" id="panel-agenda">
+      <div class="panel-head">
+        <h2>Agenda</h2>
+        <div class="toolbar">
+          <input class="input" id="agFilterDate" type="date" style="width:auto">
+          <button class="btn soft sm" id="agAll">Ver todas</button>
+          <a class="btn sm" href="agendar.html">+ Nueva cita</a>
+        </div>
+      </div>
+      <div class="stat-grid" id="agStats"></div>
+      <div id="agList"></div>
+    </section>
+
+    <!-- ============ CAJA ============ -->
+    <section class="panel" id="panel-caja">
+      <div class="panel-head">
+        <h2>Caja</h2>
+        <div class="toolbar">
+          <input class="input" id="cajaDate" type="date" style="width:auto">
+          <button class="btn sm" id="ventaRapida">+ Venta rápida</button>
+        </div>
+      </div>
+
+      <div class="stat-grid" id="cajaStats"></div>
+
+      <div class="split">
+        <div>
+          <div class="card">
+            <h3>Citas por cobrar</h3>
+            <div id="cobroList"></div>
+          </div>
+          <div class="card">
+            <h3>Cobros del día</h3>
+            <div id="salesList"></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card">
+            <h3>Registrar gasto</h3>
+            <div class="field"><label>Concepto</label>
+              <input class="input" id="gConcept" type="text" placeholder="Ej. Material, renta, luz..."></div>
+            <div class="two-col">
+              <div class="field"><label>Monto</label>
+                <input class="input" id="gAmount" type="number" min="0" step="1" placeholder="0"></div>
+              <div class="field"><label>Categoría</label>
+                <select class="input" id="gCat">
+                  <option>Material</option><option>Renta</option><option>Servicios</option>
+                  <option>Sueldos</option><option>Publicidad</option><option>Otros</option>
+                </select></div>
+            </div>
+            <button class="btn block" id="addExpense">Agregar gasto</button>
+          </div>
+          <div class="card">
+            <h3>Gastos del día</h3>
+            <div id="expenseList"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ REPORTES ============ -->
+    <section class="panel" id="panel-reportes">
+      <div class="panel-head">
+        <h2>Reportes</h2>
+        <div class="toolbar">
+          <label class="muted" style="font-size:.85rem">Del</label>
+          <input class="input" id="repFrom" type="date" style="width:auto">
+          <label class="muted" style="font-size:.85rem">al</label>
+          <input class="input" id="repTo" type="date" style="width:auto">
+        </div>
+      </div>
+      <div class="stat-grid" id="repStats"></div>
+
+      <div class="split">
+        <div class="card">
+          <h3>Personas que agendan por día</h3>
+          <div class="bars" id="chartBookings"></div>
+        </div>
+        <div class="card">
+          <h3>Flujo de dinero por día</h3>
+          <div class="bars" id="chartFlow"></div>
+          <div class="muted center" style="font-size:.8rem;margin-top:8px">■ Ingresos&nbsp;&nbsp;&nbsp;▨ Gastos</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Ingresos por método de pago</h3>
+        <div id="methodBreak"></div>
+      </div>
+    </section>
+
+    <!-- ============ INVENTARIO ============ -->
+    <section class="panel" id="panel-inventario">
+      <div class="panel-head">
+        <h2>Inventario</h2>
+        <div class="toolbar">
+          <button class="btn sm" id="addProdBtn">+ Agregar producto</button>
+        </div>
+      </div>
+      <div class="stat-grid" id="invStats"></div>
+      <div id="invList"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ====================== MODAL: COBRAR ====================== -->
+<div class="modal-mask" id="cobroMask">
+  <div class="modal">
+    <div class="m-head">
+      <h3>Cobrar</h3>
+      <button class="x-btn" data-close="cobro">&times;</button>
+    </div>
+    <div class="m-body">
+      <div class="field"><label>Cliente</label>
+        <input class="input" id="coName" type="text" placeholder="Nombre del cliente"></div>
+      <input type="hidden" id="coPhone"><input type="hidden" id="coBookingId">
+
+      <label style="font-size:.85rem;font-weight:500">Servicios / conceptos</label>
+      <div id="coLines" style="margin:6px 0 4px"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        <select class="input" id="coAddService" style="flex:1;min-width:160px">
+          <option value="">+ Agregar servicio…</option>
+        </select>
+        <button class="btn soft sm" id="coAddBlank">+ Línea libre</button>
+      </div>
+
+      <div class="total-row" style="margin-top:14px">
+        <span class="t-label">Subtotal</span>
+        <span id="coSubtotal" style="font-weight:600">$0</span>
+      </div>
+      <div class="field">
+        <label>Total a cobrar <span class="muted">(editable — puedes agregar costo extra o descuento)</span></label>
+        <input class="input" id="coTotal" type="number" min="0" step="1" style="font-size:1.3rem;font-weight:700">
+      </div>
+
+      <label style="font-size:.85rem;font-weight:500">Método de pago</label>
+      <div class="pay-methods" id="coMethods">
+        <div class="pay-opt active" data-method="efectivo">Efectivo</div>
+        <div class="pay-opt" data-method="transferencia">Transferencia</div>
+        <div class="pay-opt" data-method="tarjeta">Tarjeta</div>
+      </div>
+    </div>
+    <div class="m-foot">
+      <button class="btn ghost" data-close="cobro">Cancelar</button>
+      <button class="btn" id="doCobro">Cobrar e imprimir ticket</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====================== MODAL: TICKET ====================== -->
+<div class="modal-mask" id="ticketMask">
+  <div class="modal">
+    <div class="m-head">
+      <h3>Ticket generado</h3>
+      <button class="x-btn" data-close="ticket">&times;</button>
+    </div>
+    <div class="m-body">
+      <p class="muted" style="margin-top:0">Cobro registrado correctamente. Descarga el ticket o envíalo por WhatsApp.</p>
+      <div id="ticketPreview" style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;font-family:monospace;font-size:.8rem;white-space:pre-wrap;color:#111"></div>
+    </div>
+    <div class="m-foot">
+      <button class="btn soft" id="tkDownload">⬇ Descargar PDF</button>
+      <button class="btn" id="tkWhatsApp">Enviar por WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====================== MODAL: PRODUCTO ====================== -->
+<div class="modal-mask" id="prodMask">
+  <div class="modal">
+    <div class="m-head">
+      <h3 id="prodTitle">Producto</h3>
+      <button class="x-btn" data-close="prod">&times;</button>
+    </div>
+    <div class="m-body">
+      <input type="hidden" id="prodId">
+      <div class="field"><label>Nombre</label><input class="input" id="prodName" type="text" placeholder="Nombre del producto"></div>
+      <div class="two-col">
+        <div class="field"><label>Cantidad</label><input class="input" id="prodQty" type="number" min="0" step="1" value="0"></div>
+        <div class="field"><label>Mínimo (alerta)</label><input class="input" id="prodMin" type="number" min="0" step="1" value="1"></div>
+      </div>
+      <div class="field"><label>Costo unitario</label><input class="input" id="prodCost" type="number" min="0" step="1" value="0"></div>
+    </div>
+    <div class="m-foot">
+      <button class="btn ghost" data-close="prod">Cancelar</button>
+      <button class="btn" id="saveProd">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<script src="app.js"></script>
+<script src="firebase.js"></script>
+<script src="ticket-pdf.js"></script>
+<script>
+Data.init(); // conecta con Firebase (o modo local si no hay internet)
+/* ============================================================
+   LOGIN GATE
+   ============================================================ */
+const AUTH_KEY = "lume_auth_ok";
+function isAuthed(){ return sessionStorage.getItem(AUTH_KEY) === "1"; }
+function showApp(){
+  document.getElementById("gate").style.display = "none";
+  document.getElementById("shell").style.display = "block";
+  initApp();
+}
+function tryLogin(){
+  const v = document.getElementById("pass").value;
+  if(v === CONFIG.adminPassword){
+    sessionStorage.setItem(AUTH_KEY, "1");
+    showApp();
+  } else {
+    document.getElementById("passErr").style.display = "block";
+  }
+}
+document.getElementById("loginBtn").addEventListener("click", tryLogin);
+document.getElementById("pass").addEventListener("keydown", e=>{ if(e.key==="Enter") tryLogin(); });
+document.getElementById("logoutBtn").addEventListener("click", ()=>{
+  sessionStorage.removeItem(AUTH_KEY); location.href = "index.html";
+});
+if(isAuthed()) showApp();
+
+/* ============================================================
+   HELPERS COMPARTIDOS
+   ============================================================ */
+let toastT;
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastT); toastT = setTimeout(()=> t.classList.remove("show"), 2600);
+}
+const B = () => Data.get("bookings");
+const S = () => Data.get("sales");
+const E = () => Data.get("expenses");
+const I = () => Data.get("inventory");
+
+// vuelve a dibujar el panel visible (se llama en cada cambio de Firebase)
+function refreshActivePanel(){
+  const active = document.querySelector(".panel.active");
+  if(!active) return;
+  const name = active.id.replace("panel-","");
+  if(name==="agenda") renderAgenda();
+  else if(name==="caja") renderCaja();
+  else if(name==="reportes") renderReportes();
+  else if(name==="inventario") renderInventario();
+}
+
+function methodPill(m){ return `<span class="pill ${m}">${m.charAt(0).toUpperCase()+m.slice(1)}</span>`; }
+function statusPill(s){
+  const map = { pendiente:["wait","Pendiente"], cobrada:["paid","Cobrada"], cancelada:["cancel","Cancelada"] };
+  const [c,l] = map[s] || ["wait", s];
+  return `<span class="pill ${c}">${l}</span>`;
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+document.querySelectorAll(".tab").forEach(tab=>{
+  tab.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById("panel-" + tab.dataset.panel).classList.add("active");
+    if(tab.dataset.panel==="caja") renderCaja();
+    if(tab.dataset.panel==="reportes") renderReportes();
+    if(tab.dataset.panel==="inventario") renderInventario();
+    if(tab.dataset.panel==="agenda") renderAgenda();
+  });
+});
+function goPanel(name){
+  document.querySelector(`.tab[data-panel="${name}"]`).click();
+}
+
+/* cerrar modales */
+document.querySelectorAll("[data-close]").forEach(b=>{
+  b.addEventListener("click", ()=> closeModal(b.dataset.close));
+});
+document.querySelectorAll(".modal-mask").forEach(m=>{
+  m.addEventListener("click", e=>{ if(e.target===m){ m.classList.remove("open"); } });
+});
+function openModal(id){ document.getElementById(id+"Mask").classList.add("open"); }
+function closeModal(id){ document.getElementById(id+"Mask").classList.remove("open"); }
+
+/* ============================================================
+   INIT
+   ============================================================ */
+function initApp(){
+  const t = todayISO();
+  document.getElementById("agFilterDate").value = t;
+  document.getElementById("cajaDate").value = t;
+  document.getElementById("repTo").value = t;
+  const from = new Date(); from.setDate(from.getDate()-6);
+  document.getElementById("repFrom").value = from.toISOString().slice(0,10);
+
+  // listeners de filtros
+  document.getElementById("agFilterDate").addEventListener("change", ()=>{ agShowAll=false; renderAgenda(); });
+  document.getElementById("agAll").addEventListener("click", ()=>{ agShowAll=true; renderAgenda(); });
+  document.getElementById("cajaDate").addEventListener("change", renderCaja);
+  document.getElementById("repFrom").addEventListener("change", renderReportes);
+  document.getElementById("repTo").addEventListener("change", renderReportes);
+  document.getElementById("ventaRapida").addEventListener("click", ()=> openCobro(null));
+  document.getElementById("addExpense").addEventListener("click", addExpense);
+  document.getElementById("addProdBtn").addEventListener("click", ()=> openProd(null));
+  document.getElementById("saveProd").addEventListener("click", saveProd);
+  document.getElementById("doCobro").addEventListener("click", doCobro);
+
+  buildServiceSelect();
+
+  // sincronización en tiempo real con Firebase (o local como respaldo)
+  Data.startSync(refreshActivePanel);
+  renderAgenda();
+
+  // indicador de conexión
+  const modeTxt = Data.getMode()==="firebase" ? "● En línea" : "● Local";
+  const dot = document.getElementById("connDot");
+  if(dot){ dot.textContent = modeTxt; dot.title = Data.getMode()==="firebase" ? "Sincronizado con Firebase" : "Modo local (sin conexión a Firebase)"; dot.style.color = Data.getMode()==="firebase" ? "var(--ok)" : "var(--muted)"; }
+
+  // ¿venimos de agendar?
+  const params = new URLSearchParams(location.search);
+  if(params.get("new")){
+    toast("✓ Cita agendada correctamente");
+    history.replaceState(null,"","admin.html");
+  }
+}
+
+/* ============================================================
+   AGENDA
+   ============================================================ */
+let agShowAll = false;
+function renderAgenda(){
+  const bookings = B().slice().sort((a,b)=> (a.date+ a.time).localeCompare(b.date+b.time));
+  const filterDate = document.getElementById("agFilterDate").value;
+  const list = agShowAll ? bookings : bookings.filter(b=> b.date === filterDate);
+
+  // stats
+  const todays = bookings.filter(b=> b.date === todayISO());
+  const pend = bookings.filter(b=> b.status==="pendiente");
+  document.getElementById("agStats").innerHTML = `
+    <div class="stat"><div class="k">Citas hoy</div><div class="v">${todays.length}</div></div>
+    <div class="stat"><div class="k">Pendientes</div><div class="v">${pend.length}</div></div>
+    <div class="stat"><div class="k">${agShowAll?"Total citas":"Citas del día"}</div><div class="v">${list.length}</div></div>
+    <div class="stat"><div class="k">Estimado del día</div><div class="v sm">${money(list.reduce((s,b)=>s+b.estTotal,0))}</div></div>`;
+
+  if(!list.length){
+    document.getElementById("agList").innerHTML =
+      `<div class="empty-state"><div class="big">📅</div>No hay citas ${agShowAll?"registradas":"para este día"}.</div>`;
+    return;
+  }
+
+  document.getElementById("agList").innerHTML = `
+    <div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>Día / Hora</th><th>Cliente</th><th>Servicios</th><th class="right">Estimado</th><th>Estado</th><th class="right">Acciones</th></tr></thead>
+      <tbody>
+      ${list.map(b=>`
+        <tr>
+          <td><strong>${fmtDate(b.date)}</strong><br><span class="muted">${b.time||""}</span></td>
+          <td>${b.client.name}<br>
+              <a class="muted" href="${waLink(b.client.phone,'Hola '+b.client.name+', te escribo de '+CONFIG.businessName)}" target="_blank" style="font-size:.82rem;text-decoration:none">📱 ${b.client.phone}</a>
+              ${b.client.note?`<div class="muted" style="font-size:.8rem;margin-top:2px">📝 ${b.client.note}</div>`:""}</td>
+          <td>${b.items.map(i=>`${i.qty}× ${i.name}`).join("<br>")}</td>
+          <td class="right">${money(b.estTotal)}</td>
+          <td>${statusPill(b.status)}</td>
+          <td><div class="row-actions">
+            ${b.status==="pendiente"?`<button class="btn sm" data-cobrar="${b.id}">Cobrar</button>`:""}
+            ${b.status==="pendiente"?`<button class="btn ghost sm" data-cancelar="${b.id}">Cancelar</button>`:""}
+            <button class="btn danger sm" data-delbook="${b.id}">Eliminar</button>
+          </div></td>
+        </tr>`).join("")}
+      </tbody>
+    </table></div>`;
+
+  // acciones
+  document.querySelectorAll("[data-cobrar]").forEach(el=> el.onclick = ()=> openCobro(el.dataset.cobrar));
+  document.querySelectorAll("[data-cancelar]").forEach(el=> el.onclick = ()=>{
+    const bk = B().find(x=>x.id===el.dataset.cancelar);
+    if(bk){ Data.put("bookings", { ...bk, status:"cancelada" }); toast("Cita cancelada"); }
+  });
+  document.querySelectorAll("[data-delbook]").forEach(el=> el.onclick = ()=>{
+    Data.remove("bookings", el.dataset.delbook); toast("Cita eliminada");
+  });
+}
+
+/* ============================================================
+   COBRAR (modal)
+   ============================================================ */
+let coLines = [];  // [{name, qty, price}]
+let coMethod = "efectivo";
+let coTotalAuto = true;
+
+function buildServiceSelect(){
+  const sel = document.getElementById("coAddService");
+  SERVICES.forEach(g=>{
+    const og = document.createElement("optgroup"); og.label = g.cat;
+    g.items.forEach(it=>{
+      const o = document.createElement("option");
+      o.value = it.id; o.textContent = `${it.name} (${money(it.min)})`;
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  });
+  sel.addEventListener("change", ()=>{
+    const it = SERVICE_INDEX[sel.value];
+    if(it){ coLines.push({ name:it.name, qty:1, price:it.min }); sel.value=""; renderCoLines(); }
+  });
+  document.getElementById("coAddBlank").addEventListener("click", ()=>{
+    coLines.push({ name:"", qty:1, price:0 }); renderCoLines();
+  });
+  document.getElementById("coMethods").addEventListener("click", e=>{
+    const opt = e.target.closest(".pay-opt"); if(!opt) return;
+    document.querySelectorAll("#coMethods .pay-opt").forEach(o=>o.classList.remove("active"));
+    opt.classList.add("active"); coMethod = opt.dataset.method;
+  });
+  document.getElementById("coTotal").addEventListener("input", ()=> coTotalAuto=false);
+}
+
+function openCobro(bookingId){
+  coLines = []; coMethod = "efectivo"; coTotalAuto = true;
+  document.querySelectorAll("#coMethods .pay-opt").forEach((o,i)=> o.classList.toggle("active", i===0));
+  document.getElementById("coBookingId").value = bookingId || "";
+  document.getElementById("coName").value = "";
+  document.getElementById("coPhone").value = "";
+
+  if(bookingId){
+    const bk = B().find(x=>x.id===bookingId);
+    if(bk){
+      document.getElementById("coName").value = bk.client.name;
+      document.getElementById("coPhone").value = bk.client.phone;
+      coLines = bk.items.map(i=> ({ name:i.name, qty:i.qty, price:i.min }));
+    }
+  }
+  renderCoLines();
+  openModal("cobro");
+}
+
+function renderCoLines(){
+  const box = document.getElementById("coLines");
+  if(!coLines.length){
+    box.innerHTML = `<div class="muted" style="font-size:.88rem;padding:6px 0">Agrega al menos un servicio o línea.</div>`;
+  } else {
+    box.innerHTML = coLines.map((l,idx)=>`
+      <div style="display:grid;grid-template-columns:1fr 54px 84px 30px;gap:6px;align-items:center;margin-bottom:6px">
+        <input class="input" data-f="name" data-i="${idx}" value="${(l.name||'').replace(/"/g,'&quot;')}" placeholder="Concepto">
+        <input class="input" data-f="qty" data-i="${idx}" type="number" min="1" step="1" value="${l.qty}" title="Cantidad">
+        <input class="input" data-f="price" data-i="${idx}" type="number" min="0" step="1" value="${l.price}" title="Precio unit.">
+        <button class="x-btn" data-del="${idx}" title="Quitar">&times;</button>
+      </div>`).join("");
+    box.querySelectorAll("input").forEach(inp=>{
+      inp.addEventListener("input", ()=>{
+        const i = +inp.dataset.i, f = inp.dataset.f;
+        coLines[i][f] = (f==="name") ? inp.value : (+inp.value || 0);
+        recalcCo();
+      });
+    });
+    box.querySelectorAll("[data-del]").forEach(b=> b.addEventListener("click", ()=>{
+      coLines.splice(+b.dataset.del,1); renderCoLines();
+    }));
+  }
+  recalcCo();
+}
+function coSubtotal(){ return coLines.reduce((s,l)=> s + (l.qty*l.price), 0); }
+function recalcCo(){
+  const sub = coSubtotal();
+  document.getElementById("coSubtotal").textContent = money(sub);
+  if(coTotalAuto) document.getElementById("coTotal").value = sub;
+}
+
+function doCobro(){
+  const lines = coLines.filter(l=> l.qty>0 && (l.name||"").trim());
+  if(!lines.length){ toast("Agrega al menos un concepto con nombre."); return; }
+  const total = +document.getElementById("coTotal").value || 0;
+  if(total <= 0){ toast("El total debe ser mayor a 0."); return; }
+
+  const bookingId = document.getElementById("coBookingId").value || null;
+  const name = document.getElementById("coName").value.trim() || "Cliente";
+  const phone = document.getElementById("coPhone").value.trim();
+  const sub = coSubtotal();
+
+  const ticketNo = Data.nextTicketNo();
+
+  const sale = {
+    id: uid(), ticketNo,
+    createdAt: new Date().toISOString(),
+    date: document.getElementById("cajaDate").value || todayISO(),
+    bookingId,
+    client: { name, phone },
+    items: lines.map(l=> ({ name:l.name.trim(), qty:l.qty, price:l.price })),
+    subtotal: sub,
+    extra: Math.round((total - sub)*100)/100,
+    total,
+    method: coMethod
+  };
+  Data.put("sales", sale);
+
+  if(bookingId){
+    const bk = B().find(x=>x.id===bookingId);
+    if(bk){ Data.put("bookings", { ...bk, status:"cobrada", saleId:sale.id }); }
+  }
+
+  closeModal("cobro");
+  showTicket(sale);
+  toast("✓ Cobro registrado");
+}
+
+/* ============================================================
+   TICKET (PDF)
+   ============================================================ */
+let currentSale = null;
+function ticketText(sale){
+  const L=[];
+  L.push(CONFIG.businessName);
+  if(CONFIG.businessAddress) L.push(CONFIG.businessAddress);
+  if(CONFIG.businessPhone) L.push("Tel: "+CONFIG.businessPhone);
+  L.push("--------------------------------");
+  L.push("TICKET #"+sale.ticketNo);
+  L.push(new Date(sale.createdAt).toLocaleString("es-MX"));
+  L.push("Cliente: "+sale.client.name);
+  L.push("--------------------------------");
+  sale.items.forEach(i=>{
+    L.push(`${i.qty} x ${i.name}`);
+    L.push(`      ${money(i.qty*i.price)}`);
+  });
+  L.push("--------------------------------");
+  if(Math.abs(sale.extra) > 0.001){
+    L.push("Subtotal: "+money(sale.subtotal));
+    L.push((sale.extra>0?"Extra/Ajuste: ":"Descuento: ")+money(Math.abs(sale.extra)));
+  }
+  L.push("TOTAL: "+money(sale.total));
+  L.push("Pago: "+sale.method.toUpperCase());
+  L.push("--------------------------------");
+  L.push(CONFIG.ticketFooter);
+  return L.join("\n");
+}
+
+function showTicket(sale){
+  currentSale = sale;
+  document.getElementById("ticketPreview").textContent = ticketText(sale);
+  openModal("ticket");
+}
+
+document.getElementById("tkDownload").addEventListener("click", ()=>{
+  if(!currentSale) return;
+  buildTicketPDF(currentSale).save(`ticket-${currentSale.ticketNo}.pdf`);
+});
+document.getElementById("tkWhatsApp").addEventListener("click", ()=>{
+  if(!currentSale) return;
+  // descargamos el PDF para poder adjuntarlo, y abrimos el chat con el resumen
+  buildTicketPDF(currentSale).save(`ticket-${currentSale.ticketNo}.pdf`);
+  const summary = ticketText(currentSale) + "\n\n(Se descargó el ticket en PDF: adjúntalo en este chat 📎)";
+  const num = currentSale.client.phone || CONFIG.whatsapp;
+  window.open(waLink(num, summary), "_blank");
+});
+
+/* ============================================================
+   CAJA
+   ============================================================ */
+function renderCaja(){
+  const day = document.getElementById("cajaDate").value || todayISO();
+  const sales = S().filter(s=> s.date === day);
+  const exps = E().filter(x=> x.date === day);
+  const bookings = B().filter(b=> b.status==="pendiente");
+
+  const income = sales.reduce((s,x)=>s+x.total,0);
+  const gasto = exps.reduce((s,x)=>s+x.amount,0);
+  const byM = { efectivo:0, transferencia:0, tarjeta:0 };
+  sales.forEach(s=> byM[s.method]+=s.total);
+
+  document.getElementById("cajaStats").innerHTML = `
+    <div class="stat"><div class="k">Ingresos</div><div class="v sm" style="color:var(--ok)">${money(income)}</div></div>
+    <div class="stat"><div class="k">Gastos</div><div class="v sm" style="color:var(--danger)">${money(gasto)}</div></div>
+    <div class="stat"><div class="k">Balance</div><div class="v sm">${money(income-gasto)}</div></div>
+    <div class="stat"><div class="k">Cobros</div><div class="v">${sales.length}</div></div>
+    <div class="stat"><div class="k">Efectivo · Transf · Tarjeta</div><div class="v sm">${money(byM.efectivo)} · ${money(byM.transferencia)} · ${money(byM.tarjeta)}</div></div>`;
+
+  // citas por cobrar
+  const cobroBox = document.getElementById("cobroList");
+  if(!bookings.length){
+    cobroBox.innerHTML = `<p class="muted" style="margin:0">No hay citas pendientes por cobrar.</p>`;
+  } else {
+    cobroBox.innerHTML = bookings.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).map(b=>`
+      <div class="cart-line">
+        <div class="cl-main">
+          <div class="cl-name">${b.client.name}</div>
+          <div class="cl-price">${fmtDate(b.date)} ${b.time||""} · ${b.items.length} servicio(s) · ${money(b.estTotal)}</div>
+        </div>
+        <button class="btn sm" data-cobrar2="${b.id}">Cobrar</button>
+      </div>`).join("");
+    cobroBox.querySelectorAll("[data-cobrar2]").forEach(el=> el.onclick = ()=> openCobro(el.dataset.cobrar2));
+  }
+
+  // cobros del día
+  const salesBox = document.getElementById("salesList");
+  if(!sales.length){
+    salesBox.innerHTML = `<p class="muted" style="margin:0">Sin cobros registrados este día.</p>`;
+  } else {
+    salesBox.innerHTML = sales.slice().reverse().map(s=>`
+      <div class="cart-line">
+        <div class="cl-main">
+          <div class="cl-name">#${s.ticketNo} · ${s.client.name} ${methodPill(s.method)}</div>
+          <div class="cl-price">${new Date(s.createdAt).toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"})} · ${s.items.length} concepto(s)</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-weight:700">${money(s.total)}</div>
+          <button class="btn ghost sm" data-reprint="${s.id}" style="margin-top:4px">Ticket</button>
+        </div>
+      </div>`).join("");
+    salesBox.querySelectorAll("[data-reprint]").forEach(el=> el.onclick = ()=>{
+      const sale = S().find(x=>x.id===el.dataset.reprint); if(sale) showTicket(sale);
+    });
+  }
+
+  // gastos del día
+  const expBox = document.getElementById("expenseList");
+  if(!exps.length){
+    expBox.innerHTML = `<p class="muted" style="margin:0">Sin gastos registrados este día.</p>`;
+  } else {
+    expBox.innerHTML = exps.slice().reverse().map(x=>`
+      <div class="cart-line">
+        <div class="cl-main">
+          <div class="cl-name">${x.concept}</div>
+          <div class="cl-price">${x.category||""}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-weight:700;color:var(--danger)">− ${money(x.amount)}</div>
+          <button class="btn ghost sm" data-delexp="${x.id}" style="margin-top:4px">Eliminar</button>
+        </div>
+      </div>`).join("");
+    expBox.querySelectorAll("[data-delexp]").forEach(el=> el.onclick = ()=>{
+      Data.remove("expenses", el.dataset.delexp); toast("Gasto eliminado");
+    });
+  }
+}
+
+function addExpense(){
+  const concept = document.getElementById("gConcept").value.trim();
+  const amount = +document.getElementById("gAmount").value || 0;
+  const category = document.getElementById("gCat").value;
+  if(!concept){ toast("Escribe el concepto del gasto."); return; }
+  if(amount<=0){ toast("El monto debe ser mayor a 0."); return; }
+  Data.put("expenses", { id:uid(), createdAt:new Date().toISOString(), date: document.getElementById("cajaDate").value || todayISO(), concept, amount, category });
+  document.getElementById("gConcept").value=""; document.getElementById("gAmount").value="";
+  toast("Gasto agregado");
+}
+
+/* ============================================================
+   REPORTES
+   ============================================================ */
+function daysBetween(from, to){
+  const out=[]; let d = new Date(from+"T00:00:00"); const end = new Date(to+"T00:00:00");
+  while(d<=end){ out.push(d.toISOString().slice(0,10)); d.setDate(d.getDate()+1); if(out.length>62) break; }
+  return out;
+}
+function renderReportes(){
+  const from = document.getElementById("repFrom").value || todayISO();
+  const to = document.getElementById("repTo").value || todayISO();
+  const days = daysBetween(from, to);
+  const inRange = (d)=> d>=from && d<=to;
+
+  const sales = S().filter(s=> inRange(s.date));
+  const exps = E().filter(x=> inRange(x.date));
+  const bookings = B().filter(b=> inRange(b.date) && b.status!=="cancelada");
+
+  const income = sales.reduce((s,x)=>s+x.total,0);
+  const gasto = exps.reduce((s,x)=>s+x.amount,0);
+  const avg = sales.length ? income/sales.length : 0;
+
+  document.getElementById("repStats").innerHTML = `
+    <div class="stat"><div class="k">Ingresos</div><div class="v sm" style="color:var(--ok)">${money(income)}</div></div>
+    <div class="stat"><div class="k">Gastos</div><div class="v sm" style="color:var(--danger)">${money(gasto)}</div></div>
+    <div class="stat"><div class="k">Balance neto</div><div class="v sm">${money(income-gasto)}</div></div>
+    <div class="stat"><div class="k">Citas</div><div class="v">${bookings.length}</div></div>
+    <div class="stat"><div class="k">Cobros</div><div class="v">${sales.length}</div></div>
+    <div class="stat"><div class="k">Ticket promedio</div><div class="v sm">${money(avg)}</div></div>`;
+
+  // chart citas por día
+  const bookingsPerDay = days.map(d=> bookings.filter(b=>b.date===d).length);
+  const maxB = Math.max(1, ...bookingsPerDay);
+  document.getElementById("chartBookings").innerHTML = days.map((d,i)=>{
+    const h = (bookingsPerDay[i]/maxB)*100;
+    return `<div class="bar"><div class="bv">${bookingsPerDay[i]||""}</div>
+      <div class="col" style="height:${h}%"></div>
+      <div class="bl">${d.slice(8)}/${d.slice(5,7)}</div></div>`;
+  }).join("");
+
+  // chart flujo (ingresos vs gastos)
+  const incPerDay = days.map(d=> sales.filter(s=>s.date===d).reduce((a,s)=>a+s.total,0));
+  const expPerDay = days.map(d=> exps.filter(x=>x.date===d).reduce((a,x)=>a+x.amount,0));
+  const maxF = Math.max(1, ...incPerDay, ...expPerDay);
+  document.getElementById("chartFlow").innerHTML = days.map((d,i)=>{
+    const hi = (incPerDay[i]/maxF)*100, he = (expPerDay[i]/maxF)*100;
+    return `<div class="bar">
+      <div style="display:flex;gap:3px;align-items:flex-end;height:100%;width:100%;justify-content:center">
+        <div class="col" style="height:${hi}%;background:var(--ink)" title="Ingresos ${money(incPerDay[i])}"></div>
+        <div class="col" style="height:${he}%;background:repeating-linear-gradient(45deg,var(--danger),var(--danger) 3px,#e9cccc 3px,#e9cccc 6px)" title="Gastos ${money(expPerDay[i])}"></div>
+      </div>
+      <div class="bl">${d.slice(8)}/${d.slice(5,7)}</div></div>`;
+  }).join("");
+
+  // método de pago
+  const byM = { efectivo:0, transferencia:0, tarjeta:0 };
+  sales.forEach(s=> byM[s.method]+=s.total);
+  const totM = income || 1;
+  document.getElementById("methodBreak").innerHTML = ["efectivo","transferencia","tarjeta"].map(m=>`
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;font-size:.9rem;margin-bottom:4px">
+        <span>${methodPill(m)}</span><strong>${money(byM[m])} · ${Math.round(byM[m]/totM*100)}%</strong>
+      </div>
+      <div style="height:8px;background:var(--bg-soft);border-radius:99px;overflow:hidden">
+        <div style="height:100%;width:${byM[m]/totM*100}%;background:var(--ink)"></div>
+      </div>
+    </div>`).join("");
+}
+
+/* ============================================================
+   INVENTARIO
+   ============================================================ */
+function renderInventario(){
+  const inv = I();
+  const low = inv.filter(p=> p.qty <= p.min);
+  const value = inv.reduce((s,p)=> s + p.qty*p.cost, 0);
+  document.getElementById("invStats").innerHTML = `
+    <div class="stat"><div class="k">Productos</div><div class="v">${inv.length}</div></div>
+    <div class="stat"><div class="k">Bajo mínimo</div><div class="v" style="color:${low.length?'var(--danger)':'var(--ink)'}">${low.length}</div></div>
+    <div class="stat"><div class="k">Valor de inventario</div><div class="v sm">${money(value)}</div></div>`;
+
+  if(!inv.length){
+    document.getElementById("invList").innerHTML = `<div class="empty-state"><div class="big">📦</div>Sin productos. Agrega el primero.</div>`;
+    return;
+  }
+  document.getElementById("invList").innerHTML = `
+    <div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>Producto</th><th class="center">Cantidad</th><th class="center">Mínimo</th><th class="right">Costo u.</th><th class="right">Valor</th><th class="right">Acciones</th></tr></thead>
+      <tbody>${inv.map(p=>`
+        <tr>
+          <td>${p.name} ${p.qty<=p.min?'<span class="pill wait">Bajo</span>':''}</td>
+          <td class="center">
+            <div class="stepper" style="transform:scale(.8)">
+              <button data-decq="${p.id}">−</button><span class="qty">${p.qty}</span><button data-incq="${p.id}">+</button>
+            </div>
+          </td>
+          <td class="center">${p.min}</td>
+          <td class="right">${money(p.cost)}</td>
+          <td class="right">${money(p.qty*p.cost)}</td>
+          <td><div class="row-actions">
+            <button class="btn ghost sm" data-editp="${p.id}">Editar</button>
+            <button class="btn danger sm" data-delp="${p.id}">Eliminar</button>
+          </div></td>
+        </tr>`).join("")}
+      </tbody>
+    </table></div>`;
+
+  document.querySelectorAll("[data-incq]").forEach(b=> b.onclick=()=>chgQty(b.dataset.incq,1));
+  document.querySelectorAll("[data-decq]").forEach(b=> b.onclick=()=>chgQty(b.dataset.decq,-1));
+  document.querySelectorAll("[data-editp]").forEach(b=> b.onclick=()=>openProd(b.dataset.editp));
+  document.querySelectorAll("[data-delp]").forEach(b=> b.onclick=()=>{
+    Data.remove("inventory", b.dataset.delp); toast("Producto eliminado");
+  });
+}
+function chgQty(id, d){
+  const p = I().find(x=>x.id===id);
+  if(p){ Data.put("inventory", { ...p, qty: Math.max(0, p.qty + d) }); }
+}
+function openProd(id){
+  document.getElementById("prodId").value = id || "";
+  document.getElementById("prodTitle").textContent = id ? "Editar producto" : "Nuevo producto";
+  const p = id ? I().find(x=>x.id===id) : null;
+  document.getElementById("prodName").value = p? p.name : "";
+  document.getElementById("prodQty").value = p? p.qty : 0;
+  document.getElementById("prodMin").value = p? p.min : 1;
+  document.getElementById("prodCost").value = p? p.cost : 0;
+  openModal("prod");
+}
+function saveProd(){
+  const id = document.getElementById("prodId").value;
+  const name = document.getElementById("prodName").value.trim();
+  if(!name){ toast("Escribe el nombre del producto."); return; }
+  const data = {
+    name,
+    qty: +document.getElementById("prodQty").value || 0,
+    min: +document.getElementById("prodMin").value || 0,
+    cost: +document.getElementById("prodCost").value || 0,
+  };
+  if(id){ const p = I().find(x=>x.id===id); Data.put("inventory", { ...p, ...data }); }
+  else { Data.put("inventory", { id:uid(), ...data }); }
+  closeModal("prod"); toast("Producto guardado");
+}
+</script>
+</body>
+</html>
