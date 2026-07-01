@@ -35,6 +35,8 @@ const Data = (function(){
       try{
         if(!firebase.apps || !firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
         db = firebase.firestore();
+        // caché en disco: cargas más rápidas y funciona offline
+        try{ db.enablePersistence({ synchronizeTabs:true }).catch(function(){}); }catch(e){}
         mode = "firebase";
         console.log("[LUMÉ] Conectado a Firebase (proyecto:", FIREBASE_CONFIG.projectId + ")");
       }catch(e){
