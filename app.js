@@ -8,12 +8,11 @@
    ========================================================================== */
 
 const CONFIG = {
-  // === CONTACTO (cámbialos por los tuyos) ===
-  // Número de WhatsApp con lada del país, SIN "+", espacios ni guiones.
-  // Ej. México: 52 + 10 dígitos  ->  "5215512345678"
+  // === CONTACTO ===
+  // Número de WhatsApp con lada (puede llevar +, espacios o guiones; se limpian solos).
   whatsapp: "+528711777487",
-  // Usuario de Instagram (sin la @)
-  instagram: "https://www.instagram.com/lume.trc",
+  // Instagram: acepta el usuario (lume.trc) o la URL completa.
+  instagram: "lume.trc",
 
   // === ADMINISTRADOR ===
   adminPassword: "lume2026",   // cámbiala por una contraseña propia
@@ -21,7 +20,7 @@ const CONFIG = {
   // === NEGOCIO (aparece en el ticket) ===
   businessName: "LUMÉ Beauty Room",
   businessPhone: "+528711777487",
-  businessAddress: "paseo delPaseo del Tecnológico 900.1, Residencial la Hacienda, 27272 Torreón, Coah."
+  businessAddress: "Paseo del Tecnológico 900.1, Residencial la Hacienda, 27272 Torreón, Coah.",
   currency: "$",
   ticketFooter: "¡Gracias por tu visita!",
 };
@@ -39,6 +38,12 @@ function fmtDateLong(iso){
   if(!iso) return "";
   const dt = new Date(iso + "T00:00:00");
   return dt.toLocaleDateString("es-MX", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
+}
+function igLink(v){
+  v = (v || "").trim();
+  if(!v) return "#";
+  if(/^https?:\/\//i.test(v)) return v;              // ya es una URL completa
+  return "https://instagram.com/" + v.replace(/^@/, "");
 }
 function waLink(number, text){
   const n = (number || "").replace(/[^\d]/g, "");
