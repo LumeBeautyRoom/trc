@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Administrador · LUMÉ Beauty Room</title>
 <link rel="icon" href="logo.png">
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -40,6 +43,10 @@
     </div>
   </div>
 
+  <div id="offlineBanner" style="display:none;background:#f7e6e6;color:#a13636;text-align:center;padding:10px 16px;font-size:.9rem;border-bottom:1px solid #e6c9c9">
+    ⚠ Sin conexión a Firebase — los datos se están guardando solo en este dispositivo y no se sincronizan. Revisa tu internet y que Firestore esté creado.
+  </div>
+
   <main class="admin-main">
 
     <!-- ============ AGENDA ============ -->
@@ -47,13 +54,43 @@
       <div class="panel-head">
         <h2>Agenda</h2>
         <div class="toolbar">
-          <input class="input" id="agFilterDate" type="date" style="width:auto">
-          <button class="btn soft sm" id="agAll">Ver todas</button>
-          <a class="btn sm" href="agendar.html">+ Nueva cita</a>
+          <button class="btn soft sm" id="agRefresh" title="Actualizar">🔄</button>
+          <button class="btn sm" id="agNew">+ Cita rápida</button>
         </div>
       </div>
       <div class="stat-grid" id="agStats"></div>
-      <div id="agList"></div>
+
+      <div class="cal-toolbar">
+        <div class="view-toggle">
+          <button id="viewCal" class="active">📅 Calendario</button>
+          <button id="viewList">☰ Lista</button>
+        </div>
+        <span class="cal-spacer"></span>
+      </div>
+
+      <!-- Vista calendario -->
+      <div id="agCalView">
+        <div class="cal-toolbar">
+          <div class="cal-nav">
+            <button class="btn soft sm" id="calPrev" aria-label="Semana anterior">‹</button>
+            <button class="btn soft sm" id="calToday">Hoy</button>
+            <button class="btn soft sm" id="calNext" aria-label="Semana siguiente">›</button>
+          </div>
+          <span class="cal-title" id="calTitle"></span>
+          <span class="cal-spacer"></span>
+          <span class="muted" style="font-size:.8rem">Toca un espacio libre para agendar</span>
+        </div>
+        <div id="agCal"></div>
+      </div>
+
+      <!-- Vista lista -->
+      <div id="agListView" style="display:none">
+        <div class="cal-toolbar">
+          <input class="input" id="agFilterDate" type="date" style="width:auto" title="Filtrar por día">
+          <button class="btn soft sm" id="agAll">Todas</button>
+        </div>
+        <div id="agListBody"></div>
+      </div>
     </section>
 
     <!-- ============ CAJA ============ -->
@@ -235,6 +272,44 @@
   </div>
 </div>
 
+<!-- ====================== MODAL: CITA RÁPIDA ====================== -->
+<div class="modal-mask" id="quickMask">
+  <div class="modal">
+    <div class="m-head">
+      <h3>Cita rápida</h3>
+      <button class="x-btn" data-close="quick">&times;</button>
+    </div>
+    <div class="m-body">
+      <div class="field"><label>Servicio</label>
+        <select class="input" id="qService"></select></div>
+      <div class="field"><label>Nombre de la persona</label>
+        <input class="input" id="qName" type="text" placeholder="Nombre" autocomplete="name"></div>
+      <div class="field"><label>Teléfono <span class="muted">(opcional)</span></label>
+        <input class="input" id="qPhone" type="tel" placeholder="10 dígitos" inputmode="numeric"></div>
+      <div class="two-col">
+        <div class="field"><label>Día</label><input class="input" id="qDate" type="date"></div>
+        <div class="field"><label>Hora</label><input class="input" id="qTime" type="time"></div>
+      </div>
+    </div>
+    <div class="m-foot">
+      <button class="btn ghost" data-close="quick">Cancelar</button>
+      <button class="btn" id="saveQuick">Agendar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====================== MODAL: DETALLE DE CITA ====================== -->
+<div class="modal-mask" id="citaMask">
+  <div class="modal">
+    <div class="m-head">
+      <h3>Detalle de cita</h3>
+      <button class="x-btn" data-close="cita">&times;</button>
+    </div>
+    <div class="m-body" id="citaBody"></div>
+    <div class="m-foot" id="citaFoot"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
@@ -268,7 +343,9 @@ document.getElementById("pass").addEventListener("keydown", e=>{ if(e.key==="Ent
 document.getElementById("logoutBtn").addEventListener("click", ()=>{
   sessionStorage.removeItem(AUTH_KEY); location.href = "index.html";
 });
-if(isAuthed()) showApp();
+// NOTA: la comprobación automática de sesión se hace al FINAL del script,
+// cuando todas las variables y funciones ya están definidas (evita el error
+// "Cannot access ... before initialization" al recargar ya con sesión iniciada).
 
 /* ============================================================
    HELPERS COMPARTIDOS
@@ -336,15 +413,24 @@ function closeModal(id){ document.getElementById(id+"Mask").classList.remove("op
    ============================================================ */
 function initApp(){
   const t = todayISO();
-  document.getElementById("agFilterDate").value = t;
+  document.getElementById("agFilterDate").value = "";   // vacío = mostrar todas
   document.getElementById("cajaDate").value = t;
   document.getElementById("repTo").value = t;
   const from = new Date(); from.setDate(from.getDate()-6);
   document.getElementById("repFrom").value = from.toISOString().slice(0,10);
 
   // listeners de filtros
-  document.getElementById("agFilterDate").addEventListener("change", ()=>{ agShowAll=false; renderAgenda(); });
-  document.getElementById("agAll").addEventListener("click", ()=>{ agShowAll=true; renderAgenda(); });
+  document.getElementById("agFilterDate").addEventListener("change", renderList);
+  document.getElementById("agAll").addEventListener("click", ()=>{ document.getElementById("agFilterDate").value=""; renderList(); });
+  document.getElementById("agRefresh").addEventListener("click", ()=>{ refreshActivePanel(); toast("Actualizado"); });
+  document.getElementById("agNew").addEventListener("click", ()=> openQuickAdd(todayISO(), ""));
+  document.getElementById("saveQuick").addEventListener("click", saveQuick);
+  document.getElementById("calPrev").addEventListener("click", ()=>{ agWeekStart=addDaysISO(agWeekStart,-7); renderCalendar(); renderAgStats(); });
+  document.getElementById("calNext").addEventListener("click", ()=>{ agWeekStart=addDaysISO(agWeekStart,7); renderCalendar(); renderAgStats(); });
+  document.getElementById("calToday").addEventListener("click", ()=>{ agWeekStart=weekStartToday(); renderCalendar(); renderAgStats(); });
+  document.getElementById("viewCal").addEventListener("click", ()=> setAgView("cal"));
+  document.getElementById("viewList").addEventListener("click", ()=> setAgView("list"));
+  fillQuickServices();
   document.getElementById("cajaDate").addEventListener("change", renderCaja);
   document.getElementById("repFrom").addEventListener("change", renderReportes);
   document.getElementById("repTo").addEventListener("change", renderReportes);
@@ -361,9 +447,15 @@ function initApp(){
   renderAgenda();
 
   // indicador de conexión
-  const modeTxt = Data.getMode()==="firebase" ? "● En línea" : "● Local";
+  const online = Data.getMode()==="firebase";
   const dot = document.getElementById("connDot");
-  if(dot){ dot.textContent = modeTxt; dot.title = Data.getMode()==="firebase" ? "Sincronizado con Firebase" : "Modo local (sin conexión a Firebase)"; dot.style.color = Data.getMode()==="firebase" ? "var(--ok)" : "var(--muted)"; }
+  if(dot){
+    dot.textContent = online ? "● En línea" : "● Sin conexión (local)";
+    dot.title = online ? "Sincronizado con Firebase en tiempo real" : "No se pudo conectar a Firebase; guardando solo en este dispositivo";
+    dot.style.color = online ? "var(--ok)" : "var(--danger)";
+  }
+  const banner = document.getElementById("offlineBanner");
+  if(banner) banner.style.display = online ? "none" : "block";
 
   // ¿venimos de agendar?
   const params = new URLSearchParams(location.search);
@@ -376,28 +468,107 @@ function initApp(){
 /* ============================================================
    AGENDA
    ============================================================ */
-let agShowAll = false;
-function renderAgenda(){
-  const bookings = B().slice().sort((a,b)=> (a.date+ a.time).localeCompare(b.date+b.time));
-  const filterDate = document.getElementById("agFilterDate").value;
-  const list = agShowAll ? bookings : bookings.filter(b=> b.date === filterDate);
+let agShowAll = true;     // en la vista Lista: mostrar todas
+let agView = "cal";       // "cal" | "list"
+const START_H = 8, END_H = 21;
+const DAYS_ES = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
 
-  // stats
-  const todays = bookings.filter(b=> b.date === todayISO());
+/* ---- utilidades de fecha (locales, sin desfase de zona horaria) ---- */
+function isoToDate(iso){ return new Date(iso + "T00:00:00"); }
+function dateToISO(d){
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), day=String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+}
+function addDaysISO(iso, n){ const d=isoToDate(iso); d.setDate(d.getDate()+n); return dateToISO(d); }
+function mondayOf(d){ const x=new Date(d); const off=(x.getDay()+6)%7; x.setDate(x.getDate()-off); x.setHours(0,0,0,0); return x; }
+function weekStartToday(){ return dateToISO(mondayOf(new Date())); }
+function slotHour(t){ if(!t) return START_H; let h=parseInt((t.split(":")[0]),10); if(isNaN(h)||h<START_H) h=START_H; if(h>=END_H) h=END_H-1; return h; }
+let agWeekStart = weekStartToday();
+
+function setAgView(v){
+  agView = v;
+  document.getElementById("agCalView").style.display  = v==="cal"  ? "block" : "none";
+  document.getElementById("agListView").style.display = v==="list" ? "block" : "none";
+  document.getElementById("viewCal").classList.toggle("active", v==="cal");
+  document.getElementById("viewList").classList.toggle("active", v==="list");
+  renderAgenda();
+}
+
+function renderAgenda(){
+  renderAgStats();
+  if(agView==="list") renderList(); else renderCalendar();
+}
+
+function renderAgStats(){
+  const bookings = B();
+  const todays = bookings.filter(b=> b.date === todayISO() && b.status!=="cancelada");
   const pend = bookings.filter(b=> b.status==="pendiente");
+  const weekDays = []; for(let i=0;i<7;i++) weekDays.push(addDaysISO(agWeekStart,i));
+  const wk = bookings.filter(b=> weekDays.includes(b.date) && b.status!=="cancelada");
   document.getElementById("agStats").innerHTML = `
     <div class="stat"><div class="k">Citas hoy</div><div class="v">${todays.length}</div></div>
     <div class="stat"><div class="k">Pendientes</div><div class="v">${pend.length}</div></div>
-    <div class="stat"><div class="k">${agShowAll?"Total citas":"Citas del día"}</div><div class="v">${list.length}</div></div>
-    <div class="stat"><div class="k">Estimado del día</div><div class="v sm">${money(list.reduce((s,b)=>s+b.estTotal,0))}</div></div>`;
+    <div class="stat"><div class="k">Esta semana</div><div class="v">${wk.length}</div></div>
+    <div class="stat"><div class="k">Total citas</div><div class="v">${bookings.filter(b=>b.status!=="cancelada").length}</div></div>`;
+}
+
+/* ---------- vista CALENDARIO ---------- */
+function renderCalendar(){
+  const bookings = B();
+  const days = []; for(let i=0;i<7;i++) days.push(addDaysISO(agWeekStart,i));
+  const today = todayISO();
+
+  const d0=isoToDate(days[0]), d6=isoToDate(days[6]);
+  const s=d0.toLocaleDateString("es-MX",{day:"numeric",month:"short"});
+  const e=d6.toLocaleDateString("es-MX",{day:"numeric",month:"short",year:"numeric"});
+  document.getElementById("calTitle").textContent = `${s} – ${e}`;
+
+  let html = '<div class="cal-wrap"><table class="cal"><thead><tr><th></th>';
+  days.forEach((iso,i)=>{
+    const dt=isoToDate(iso);
+    html += `<th class="${iso===today?"today":""}"><span class="dn">${DAYS_ES[i]}</span><span class="dd">${dt.getDate()}</span></th>`;
+  });
+  html += '</tr></thead><tbody>';
+  for(let h=START_H; h<END_H; h++){
+    html += `<tr><td class="hour">${h}:00</td>`;
+    days.forEach(iso=>{
+      const cs = bookings.filter(b=> b.date===iso && slotHour(b.time)===h)
+                         .sort((a,b)=>(a.time||"").localeCompare(b.time||""));
+      const chips = cs.map(b=>{
+        const svc = (b.items&&b.items.length) ? b.items[0].name + (b.items.length>1?` +${b.items.length-1}`:"") : "";
+        return `<span class="cita-chip ${b.status}" data-cita="${b.id}">
+                  <span class="t">${b.time||""}</span>
+                  <span class="n">${b.client.name}</span>
+                  <span class="n" style="opacity:.72">${svc}</span></span>`;
+      }).join("");
+      html += `<td class="slot ${iso===today?"today":""}" data-slot-date="${iso}" data-slot-time="${String(h).padStart(2,"0")}:00">${chips}</td>`;
+    });
+    html += '</tr>';
+  }
+  html += '</tbody></table></div>';
+  document.getElementById("agCal").innerHTML = html;
+
+  document.querySelectorAll("#agCal [data-cita]").forEach(el=> el.addEventListener("click", (e)=>{
+    e.stopPropagation(); openCitaDetail(el.dataset.cita);
+  }));
+  document.querySelectorAll("#agCal td.slot").forEach(td=> td.addEventListener("click", ()=>{
+    openQuickAdd(td.dataset.slotDate, td.dataset.slotTime);
+  }));
+}
+
+/* ---------- vista LISTA ---------- */
+function renderList(){
+  const bookings = B().slice().sort((a,b)=> (a.date+a.time).localeCompare(b.date+b.time));
+  const filterDate = document.getElementById("agFilterDate").value;
+  const filtering = !!filterDate;
+  const list = filtering ? bookings.filter(b=> b.date === filterDate) : bookings;
 
   if(!list.length){
-    document.getElementById("agList").innerHTML =
-      `<div class="empty-state"><div class="big">📅</div>No hay citas ${agShowAll?"registradas":"para este día"}.</div>`;
+    document.getElementById("agListBody").innerHTML =
+      `<div class="empty-state"><div class="big">📅</div>No hay citas ${filtering?"para este día":"registradas"}.</div>`;
     return;
   }
-
-  document.getElementById("agList").innerHTML = `
+  document.getElementById("agListBody").innerHTML = `
     <div class="tbl-wrap"><table class="tbl">
       <thead><tr><th>Día / Hora</th><th>Cliente</th><th>Servicios</th><th class="right">Estimado</th><th>Estado</th><th class="right">Acciones</th></tr></thead>
       <tbody>
@@ -405,7 +576,7 @@ function renderAgenda(){
         <tr>
           <td><strong>${fmtDate(b.date)}</strong><br><span class="muted">${b.time||""}</span></td>
           <td>${b.client.name}<br>
-              <a class="muted" href="${waLink(b.client.phone,'Hola '+b.client.name+', te escribo de '+CONFIG.businessName)}" target="_blank" style="font-size:.82rem;text-decoration:none">📱 ${b.client.phone}</a>
+              <a class="muted" href="${waLink(b.client.phone,'Hola '+b.client.name+', te escribo de '+CONFIG.businessName)}" target="_blank" style="font-size:.82rem;text-decoration:none">📱 ${b.client.phone||""}</a>
               ${b.client.note?`<div class="muted" style="font-size:.8rem;margin-top:2px">📝 ${b.client.note}</div>`:""}</td>
           <td>${b.items.map(i=>`${i.qty}× ${i.name}`).join("<br>")}</td>
           <td class="right">${money(b.estTotal)}</td>
@@ -419,7 +590,6 @@ function renderAgenda(){
       </tbody>
     </table></div>`;
 
-  // acciones
   document.querySelectorAll("[data-cobrar]").forEach(el=> el.onclick = ()=> openCobro(el.dataset.cobrar));
   document.querySelectorAll("[data-cancelar]").forEach(el=> el.onclick = ()=>{
     const bk = B().find(x=>x.id===el.dataset.cancelar);
@@ -428,6 +598,79 @@ function renderAgenda(){
   document.querySelectorAll("[data-delbook]").forEach(el=> el.onclick = ()=>{
     Data.remove("bookings", el.dataset.delbook); toast("Cita eliminada");
   });
+}
+
+/* ---------- CITA RÁPIDA ---------- */
+function fillQuickServices(){
+  const sel = document.getElementById("qService");
+  sel.innerHTML = "";
+  SERVICES.forEach(g=>{
+    const og=document.createElement("optgroup"); og.label=g.cat;
+    g.items.forEach(it=>{
+      const o=document.createElement("option"); o.value=it.id; o.textContent=`${it.name} (${money(it.min)})`;
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  });
+}
+function openQuickAdd(date, time){
+  document.getElementById("qName").value = "";
+  document.getElementById("qPhone").value = "";
+  document.getElementById("qDate").value = date || todayISO();
+  document.getElementById("qTime").value = time || "";
+  openModal("quick");
+  setTimeout(()=> document.getElementById("qName").focus(), 100);
+}
+function saveQuick(){
+  const it = SERVICE_INDEX[document.getElementById("qService").value];
+  const name = document.getElementById("qName").value.trim();
+  const phone = document.getElementById("qPhone").value.trim();
+  const date = document.getElementById("qDate").value;
+  const time = document.getElementById("qTime").value;
+  if(!it){ toast("Elige un servicio."); return; }
+  if(name.length < 2){ toast("Escribe el nombre."); return; }
+  if(!date || !time){ toast("Elige día y hora."); return; }
+  const booking = {
+    id: uid(), createdAt: new Date().toISOString(), date, time,
+    client: { name, phone, note:"" },
+    items: [{ id:it.id, name:it.name, qty:1, min:it.min, max:it.max, cat:it.cat }],
+    estTotal: it.min, status: "pendiente"
+  };
+  Data.put("bookings", booking);
+  closeModal("quick");
+  toast("✓ Cita agendada");
+}
+
+/* ---------- DETALLE DE CITA ---------- */
+function openCitaDetail(id){
+  const b = B().find(x=>x.id===id); if(!b) return;
+  const dt = isoToDate(b.date);
+  const dayName = DAYS_ES[(dt.getDay()+6)%7];
+  document.getElementById("citaBody").innerHTML = `
+    <div class="cita-detail-row"><span class="lbl">Cliente</span><strong>${b.client.name}</strong></div>
+    <div class="cita-detail-row"><span class="lbl">Teléfono</span>
+      ${b.client.phone?`<a href="${waLink(b.client.phone,'Hola '+b.client.name+', te escribo de '+CONFIG.businessName)}" target="_blank" style="text-decoration:none">📱 ${b.client.phone}</a>`:'<span class="muted">—</span>'}</div>
+    <div class="cita-detail-row"><span class="lbl">Día</span><span>${dayName}, ${fmtDate(b.date)}</span></div>
+    <div class="cita-detail-row"><span class="lbl">Hora</span><strong>${b.time||"—"}</strong></div>
+    <div class="cita-detail-row"><span class="lbl">Servicios</span><span style="text-align:right">${b.items.map(i=>`${i.qty}× ${i.name}`).join("<br>")}</span></div>
+    ${b.client.note?`<div class="cita-detail-row"><span class="lbl">Notas</span><span style="text-align:right">${b.client.note}</span></div>`:""}
+    <div class="cita-detail-row"><span class="lbl">Estimado</span><strong>${money(b.estTotal)}</strong></div>
+    <div class="cita-detail-row" style="border:0"><span class="lbl">Estado</span>${statusPill(b.status)}</div>`;
+
+  const foot = document.getElementById("citaFoot");
+  foot.innerHTML = `
+    ${b.status==="pendiente"?`<button class="btn" id="cdCobrar">Cobrar</button>`:""}
+    ${b.status==="pendiente"?`<button class="btn ghost" id="cdCancel">Cancelar cita</button>`:""}
+    <button class="btn danger" id="cdDelete">Eliminar</button>`;
+  openModal("cita");
+
+  if(document.getElementById("cdCobrar")) document.getElementById("cdCobrar").onclick = ()=>{ closeModal("cita"); openCobro(b.id); };
+  if(document.getElementById("cdCancel")) document.getElementById("cdCancel").onclick = ()=>{
+    Data.put("bookings", { ...b, status:"cancelada" }); closeModal("cita"); toast("Cita cancelada");
+  };
+  document.getElementById("cdDelete").onclick = ()=>{
+    Data.remove("bookings", b.id); closeModal("cita"); toast("Cita eliminada");
+  };
 }
 
 /* ============================================================
@@ -833,6 +1076,12 @@ function saveProd(){
   else { Data.put("inventory", { id:uid(), ...data }); }
   closeModal("prod"); toast("Producto guardado");
 }
+
+/* ============================================================
+   Comprobación automática de sesión — AL FINAL, cuando todo
+   (variables const/let y funciones) ya está definido.
+   ============================================================ */
+if(isAuthed()) showApp();
 </script>
 </body>
 </html>
