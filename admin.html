@@ -214,7 +214,8 @@
       <div class="panel-head">
         <h2>Clientas</h2>
         <div class="toolbar">
-          <input class="input" id="clSearch" type="search" placeholder="Buscar por nombre o teléfono" style="width:auto">
+          <input class="input" id="clSearch" type="search" placeholder="Buscar nombre, teléfono o @instagram" style="width:auto;min-width:0;flex:1">
+          <button class="btn sm" id="clNew">+ Nueva clienta</button>
         </div>
       </div>
       <div class="stat-grid" id="clStats"></div>
@@ -430,19 +431,60 @@
 
 <!-- ====================== MODAL: CLIENTA ====================== -->
 <div class="modal-mask" id="clientMask">
-  <div class="modal">
-    <div class="m-head">
-      <h3 id="clTitle">Clienta</h3>
-      <button class="x-btn" data-close="client">&times;</button>
+  <div class="modal wide">
+    <div class="m-head cl-head">
+      <div class="cl-hero" id="clHero"></div>
+      <button class="x-btn" data-close="client" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="cl-tabs" id="clTabs" role="tablist">
+      <button type="button" data-ct="resumen" class="active">Resumen</button>
+      <button type="button" data-ct="historial">Historial</button>
+      <button type="button" data-ct="medica">Ficha médica</button>
+      <button type="button" data-ct="datos">Datos</button>
     </div>
     <div class="m-body">
       <input type="hidden" id="clId">
-      <div class="field"><label>Nombre</label><input class="input" id="clName" type="text"></div>
-      <div class="field"><label>Teléfono</label><input class="input" id="clPhone" type="tel"></div>
-      <div class="field"><label>Nota / diagnóstico</label><textarea class="textarea" id="clNote"></textarea></div>
-      <div class="muted" id="clMeta" style="font-size:.85rem"></div>
+
+      <div class="ct-pane" data-pane="resumen" id="clResumen"></div>
+      <div class="ct-pane" data-pane="historial" id="clHistorial" hidden></div>
+
+      <div class="ct-pane" data-pane="medica" hidden>
+        <p class="muted" style="margin:0 0 10px;font-size:.85rem">Información privada: solo la ve la administradora.</p>
+        <div class="field"><label>Condiciones de salud <span class="muted">(toca para marcar)</span></label>
+          <div class="cond-chips" id="clConds"></div></div>
+        <div class="field"><label>Alergias</label>
+          <textarea class="textarea" id="clAllergies" placeholder="Ej. alergia al monómero, al látex, a la penicilina…"></textarea></div>
+        <div class="field"><label>Medicamentos que toma</label>
+          <input class="input" id="clMeds" type="text" placeholder="Ej. metformina, anticoagulante…"></div>
+        <div class="field"><label>Observaciones médicas</label>
+          <textarea class="textarea" id="clMedNotes" placeholder="Ej. uñas quebradizas, cirugía reciente, piel reactiva…"></textarea></div>
+        <div class="muted" id="clMedUpd" style="font-size:.8rem"></div>
+      </div>
+
+      <div class="ct-pane" data-pane="datos" hidden>
+        <div class="two-col">
+          <div class="field"><label>Nombre <span class="req">*</span></label><input class="input" id="clName" type="text" autocomplete="off"></div>
+          <div class="field"><label>Teléfono</label><input class="input" id="clPhone" type="tel" inputmode="numeric"></div>
+        </div>
+        <div class="two-col">
+          <div class="field"><label>Fecha de nacimiento</label><input class="input" id="clBirth" type="date"></div>
+          <div class="field"><label>¿Cómo nos conoció?</label>
+            <select class="input" id="clSource">
+              <option value="">—</option><option>Instagram</option><option>Facebook</option><option>TikTok</option>
+              <option>Google</option><option>Recomendación</option><option>Pasaba por aquí</option><option>Otro</option>
+            </select></div>
+        </div>
+        <div class="two-col">
+          <div class="field"><label>Instagram</label><input class="input" id="clIg" type="text" placeholder="@usuario" autocapitalize="none"></div>
+          <div class="field"><label>Correo</label><input class="input" id="clEmail" type="email" placeholder="correo@ejemplo.com" autocapitalize="none"></div>
+        </div>
+        <div class="field"><label>Preferencias</label>
+          <textarea class="textarea" id="clPrefs" placeholder="Forma y largo de uña, colores favoritos, curvatura de pestaña…"></textarea></div>
+        <div class="field"><label>Nota / diagnóstico</label>
+          <textarea class="textarea" id="clNote" placeholder="Ej. uña 3 débil, cliente frecuente…"></textarea></div>
+      </div>
     </div>
-    <div class="m-foot">
+    <div class="m-foot" id="clFoot" hidden>
       <button class="btn danger" id="clDelete">Eliminar</button>
       <button class="btn" id="clSave">Guardar</button>
     </div>
@@ -542,6 +584,7 @@ function refreshActivePanel(){
   else if(name==="inventario") renderInventario();
   else if(name==="clientas") renderClientas();
   if(document.getElementById("tmMask").classList.contains("open")) renderTomorrow();
+  refreshClientIfOpen();
 }
 // cada cambio de datos: refrescar pantalla y revisar avisos
 function onDataChange(){
@@ -687,6 +730,11 @@ function initApp(){
   document.getElementById("clSearch").addEventListener("input", renderClientas);
   document.getElementById("clSave").addEventListener("click", saveClient);
   document.getElementById("clDelete").addEventListener("click", deleteClient);
+  document.getElementById("clNew").addEventListener("click", ()=> openClient(null));
+  document.querySelectorAll("#clTabs button").forEach(b=> b.addEventListener("click", ()=> setClientTab(b.dataset.ct)));
+  document.getElementById("clConds").addEventListener("click", e=>{
+    const chip = e.target.closest(".cond-chip"); if(chip) chip.classList.toggle("on");
+  });
 
   buildServiceSelect();
 
@@ -1311,7 +1359,7 @@ function pickClient(id){
   document.getElementById("qName").value = c.name;
   document.getElementById("qPhone").value = c.phone||"";
   document.getElementById("qNote").value = c.note||"";
-  document.getElementById("qClientInfo").textContent = `✓ Clienta registrada · ${(+c.visits||0)} visita(s)`+(c.note?` · última nota: ${c.note}`:"");
+  document.getElementById("qClientInfo").innerHTML = esc(`✓ Clienta registrada · ${(+c.visits||0)} visita(s)`+(c.note?` · última nota: ${c.note}`:"")) + healthAlertHTML(c);
   document.getElementById("qAC").style.display = "none";
 }
 function saveQuick(){
@@ -1396,7 +1444,8 @@ function openCitaDetail(id){
       <div class="cita-detail-row"><span class="lbl">Cliente</span><strong>${esc(b.client.name)}</strong></div>
       <div class="cita-detail-row"><span class="lbl">Teléfono</span>
         ${b.client.phone?`<a href="${waLink(b.client.phone,'Hola '+b.client.name+', te escribo de '+CONFIG.businessName)}" target="_blank" rel="noopener" style="text-decoration:none">📱 ${esc(b.client.phone)}</a>`:'<span class="muted">—</span>'}</div>
-      ${cl?`<div class="cita-detail-row"><span class="lbl">Historial</span><span>${(+cl.visits||0)} visita(s)</span></div>`:""}
+      ${healthAlertHTML(cl)}
+      ${cl?`<div class="cita-detail-row"><span class="lbl">Clienta</span><span>${clientBookings(cl).filter(blocksTime).length} cita(s)${cl.birthDate?` · ${ageOf(cl.birthDate)} años`:""} · <button type="button" class="link-btn" data-cd="client">Ver ficha →</button></span></div>`:""}
       ${cl&&cl.note?`<div class="cita-detail-row"><span class="lbl">Diagnóstico</span><span style="text-align:right">${esc(cl.note)}</span></div>`:""}
       <div class="cita-detail-row"><span class="lbl">Día</span><span>${dayName}, ${fmtDate(b.date)}</span></div>
       <div class="cita-detail-row"><span class="lbl">Horario</span><strong>${fmtRange12(b.time, endOf(b))} <span class="muted" style="font-weight:400">(${durLabel(b.dur)})</span></strong></div>
@@ -1429,6 +1478,12 @@ function citaAction(act, b){
   const put = (changes, msg)=>{ Data.put("bookings", { ...b, ...changes }); closeModal("cita"); if(msg) toast(msg); };
   switch(act){
     case "cobrar":  closeModal("cita"); openCobro(b.id); break;
+    case "client":{
+      const cl = Data.get("clients").find(x=> x.id===b.clientId)
+              || Data.get("clients").find(x=> b.client.phone && normalizePhone(x.phone)===normalizePhone(b.client.phone));
+      if(cl){ closeModal("cita"); goPanel("clientas"); openClient(cl.id); }
+      break;
+    }
     case "confirm": put({ confirmed:!b.confirmed }, b.confirmed ? "Confirmación quitada" : "✓ Cita confirmada"); break;
     case "move":    closeModal("cita"); openMove(b.id); break;
     case "tomorrow":{
@@ -1992,64 +2047,333 @@ function saveProd(){
 /* ============================================================
    CLIENTAS
    ============================================================ */
+// condiciones de salud que importan en uñas, pestañas y cabello
+const CONDITIONS = [
+  "Diabetes", "Embarazo o lactancia", "Hipertensión", "Problemas de circulación",
+  "Hongos o infección en uñas", "Piel sensible / dermatitis", "Alergia al acrílico o monómero",
+  "Alergia al látex", "Alergia a adhesivos de pestañas", "Toma anticoagulantes",
+  "Quimioterapia / tratamiento oncológico", "Problemas de tiroides",
+];
+const SOURCES = ["Instagram","Facebook","TikTok","Google","Recomendación","Pasaba por aquí","Otro"];
+const lc = (s)=> (s||"").trim().toLowerCase();
+
+/* ---- cumpleaños y edad ---- */
+function ageOf(birth){
+  if(!birth) return null;
+  const b = isoToDate(birth), t = new Date();
+  let a = t.getFullYear()-b.getFullYear();
+  if(t.getMonth()<b.getMonth() || (t.getMonth()===b.getMonth() && t.getDate()<b.getDate())) a--;
+  return a;
+}
+// días que faltan para su cumpleaños (0 = hoy)
+function daysToBirthday(birth){
+  if(!birth) return null;
+  const b = isoToDate(birth), t = isoToDate(todayISO());
+  let next = new Date(t.getFullYear(), b.getMonth(), b.getDate());
+  if(next < t) next = new Date(t.getFullYear()+1, b.getMonth(), b.getDate());
+  return Math.round((next - t)/864e5);
+}
+function birthdayLabel(birth){
+  if(!birth) return "";
+  const d = isoToDate(birth).toLocaleDateString("es-MX",{day:"numeric",month:"long"});
+  const n = daysToBirthday(birth), a = ageOf(birth);
+  if(a==null || a<0) return `🎂 ${d}`;
+  if(n===0) return `🎂 ¡Hoy cumple ${a} años! 🎉`;
+  if(n<=7) return `🎂 ${d} · cumple ${a+1} ${n===1?"mañana":`en ${n} días`}`;
+  return `🎂 ${d} · ${a} años`;
+}
+function hasHealthAlert(c){ return !!(c && ((c.allergies||"").trim() || (c.conditions||[]).length)); }
+function healthAlertHTML(c){
+  if(!hasHealthAlert(c)) return "";
+  const parts = [];
+  if((c.allergies||"").trim()) parts.push(`<b>Alergias:</b> ${esc(c.allergies)}`);
+  if((c.conditions||[]).length) parts.push(`<b>Condiciones:</b> ${c.conditions.map(esc).join(", ")}`);
+  if((c.medications||"").trim()) parts.push(`<b>Medicamentos:</b> ${esc(c.medications)}`);
+  return `<div class="cl-alert">⚠ ${parts.join(" · ")}</div>`;
+}
+
+/* ---- todo lo que ha hecho una clienta ---- */
+function clientBookings(c){
+  const ph = normalizePhone(c.phone), nm = lc(c.name);
+  return B().filter(b=> !isBlock(b) && (
+    b.clientId===c.id ||
+    (ph && normalizePhone(b.client.phone)===ph) ||
+    (!ph && !b.clientId && lc(b.client.name)===nm)
+  ));
+}
+function clientSales(c, bks){
+  const ids = new Set(bks.map(b=> b.id)), ph = normalizePhone(c.phone), nm = lc(c.name);
+  return S().filter(s=> (s.bookingId && ids.has(s.bookingId)) ||
+    (!s.bookingId && ((ph && normalizePhone(s.client.phone)===ph) || (!ph && lc(s.client.name)===nm))));
+}
+function clientInsights(c){
+  const bks = clientBookings(c).sort(byDateTime);
+  const sales = clientSales(c, bks);
+  const t = todayISO(), nm = nowMin();
+  const isFuture = (b)=> b.date>t || (b.date===t && hmToMin(b.time)>=nm);
+  const upcoming = bks.filter(b=> isFuture(b) && blocksTime(b) && b.status!=="cobrada");
+  const attended = bks.filter(b=> b.status==="cobrada");
+  const noshow = bks.filter(b=> b.status==="noshow").length;
+  const cancel = bks.filter(b=> b.status==="cancelada").length;
+  const spent = sales.reduce((s,x)=> s+(+x.total||0), 0);
+  // servicios que más se hace (de citas que no se cancelaron)
+  const svc = {};
+  bks.filter(b=> blocksTime(b)).forEach(b=> (b.items||[]).forEach(i=>{ svc[i.name] = (svc[i.name]||0) + (+i.qty||1); }));
+  const topSvc = Object.entries(svc).sort((a,b)=> b[1]-a[1]);
+  const lastVisit = attended.length ? attended[attended.length-1].date : (c.lastVisit||"");
+  const since = [c.createdAt ? c.createdAt.slice(0,10) : "", bks[0] ? bks[0].date : ""].filter(Boolean).sort()[0] || "";
+  return { bks, sales, upcoming, attended, noshow, cancel, spent, avg: sales.length ? spent/sales.length : 0,
+           topSvc, totalSvc: Object.values(svc).reduce((a,b)=>a+b,0), lastVisit, since };
+}
+function monthYear(iso){ return iso ? isoToDate(iso).toLocaleDateString("es-MX",{month:"long",year:"numeric"}) : "—"; }
+function fmtStamp(isoStamp){
+  if(!isoStamp) return "";
+  const d = new Date(isoStamp);
+  return d.toLocaleDateString("es-MX",{day:"numeric",month:"short",year:"numeric"}) + ", " +
+         d.toLocaleTimeString("es-MX",{hour:"numeric",minute:"2-digit",hour12:true});
+}
+
+/* ---------- lista de clientas ---------- */
 function renderClientas(){
   const all = Data.get("clients");
-  const term = (document.getElementById("clSearch").value||"").trim().toLowerCase();
+  const term = lc(document.getElementById("clSearch").value);
+  const t = todayISO(), month = t.slice(5,7);
+
+  // citas por clienta (una sola pasada)
+  const byId = {}, byPhone = {};
+  B().forEach(b=>{
+    if(isBlock(b)) return;
+    if(b.clientId) (byId[b.clientId] = byId[b.clientId] || []).push(b);
+    const ph = normalizePhone(b.client.phone);
+    if(ph) (byPhone[ph] = byPhone[ph] || []).push(b);
+  });
+  const bksOf = (c)=>{
+    const m = new Map();
+    (byId[c.id]||[]).forEach(b=> m.set(b.id,b));
+    (byPhone[normalizePhone(c.phone)]||[]).forEach(b=> m.set(b.id,b));
+    return [...m.values()];
+  };
+
   let list = all.slice().sort((a,b)=> (b.lastVisit||"").localeCompare(a.lastVisit||""));
   if(term){
     const digits = term.replace(/\D/g,"");
-    list = list.filter(c=> (c.name||"").toLowerCase().includes(term) || (digits && normalizePhone(c.phone).includes(digits)));
+    list = list.filter(c=> lc(c.name).includes(term) || lc(c.instagram).includes(term.replace(/^@/,"")) ||
+      lc(c.email).includes(term) || (digits.length>2 && normalizePhone(c.phone).includes(digits)));
   }
+  const bdays = all.filter(c=> c.birthDate && c.birthDate.slice(5,7)===month).length;
+  const newOnes = all.filter(c=> (c.createdAt||"").slice(0,7)===t.slice(0,7)).length;
+  const alerts = all.filter(hasHealthAlert).length;
   document.getElementById("clStats").innerHTML = `
     <div class="stat"><div class="k">Clientas</div><div class="v">${all.length}</div></div>
-    <div class="stat"><div class="k">Mostrando</div><div class="v">${list.length}</div></div>
-    <div class="stat"><div class="k">Visitas totales</div><div class="v">${all.reduce((s,c)=>s+(+c.visits||0),0)}</div></div>`;
+    <div class="stat"><div class="k">Nuevas este mes</div><div class="v">${newOnes}</div></div>
+    <div class="stat"><div class="k">Cumpleaños este mes</div><div class="v">${bdays}</div></div>
+    <div class="stat"><div class="k">Con alergias / cuidados</div><div class="v">${alerts}</div></div>`;
 
   if(!list.length){
     document.getElementById("clList").innerHTML = `<div class="empty-state"><div class="big">👤</div>${term?"Sin resultados.":"Aún no hay clientas registradas. Se guardan solas al agendar."}</div>`;
     return;
   }
   document.getElementById("clList").innerHTML = `
-    <div class="tbl-wrap"><table class="tbl">
-      <thead><tr><th>Nombre</th><th>Teléfono</th><th class="center">Visitas</th><th>Última</th><th>Diagnóstico / nota</th><th></th></tr></thead>
-      <tbody>${list.map(c=>`
-        <tr>
-          <td><strong>${esc(c.name)}</strong></td>
-          <td>${c.phone?`<a class="muted" href="${waLink(c.phone,'Hola '+c.name+', te escribo de '+CONFIG.businessName)}" target="_blank" style="text-decoration:none">📱 ${esc(c.phone)}</a>`:'<span class="muted">—</span>'}</td>
-          <td class="center">${(+c.visits||0)}</td>
+    <div class="tbl-wrap"><table class="tbl cl-tbl">
+      <thead><tr><th>Clienta</th><th>Teléfono</th><th class="center">Citas</th><th>Última visita</th><th>Próxima cita</th><th></th></tr></thead>
+      <tbody>${list.map(c=>{
+        const bks = bksOf(c).sort(byDateTime);
+        const active = bks.filter(blocksTime);
+        const next = active.find(b=> b.date>=t && b.status==="pendiente");
+        const db = daysToBirthday(c.birthDate);
+        return `
+        <tr data-client="${c.id}" tabindex="0">
+          <td><div class="cl-cell"><span class="cl-av">${esc(initials(c.name))}</span>
+            <div><strong>${esc(c.name)}</strong>${db!=null&&db<=7?` <span title="${esc(birthdayLabel(c.birthDate))}">🎂</span>`:""}${hasHealthAlert(c)?' <span class="pill cancel" title="Alergias o cuidados">⚠</span>':""}
+            ${c.birthDate?`<div class="muted" style="font-size:.78rem">${ageOf(c.birthDate)} años</div>`:""}</div></div></td>
+          <td>${c.phone?esc(c.phone):'<span class="muted">—</span>'}</td>
+          <td class="center">${active.length}</td>
           <td>${c.lastVisit?fmtDate(c.lastVisit):'—'}</td>
-          <td class="muted" style="max-width:240px">${esc(c.note||'')}</td>
-          <td class="right"><div class="row-actions"><button class="btn soft sm" data-book="${c.id}">+ Cita</button><button class="btn ghost sm" data-client="${c.id}">Ver / editar</button></div></td>
-        </tr>`).join("")}
+          <td>${next?`${dayShort(next.date)} · ${fmt12(next.time)}`:'<span class="muted">—</span>'}</td>
+          <td class="right"><div class="row-actions"><button class="btn soft sm" data-book="${c.id}">+ Cita</button></div></td>
+        </tr>`;}).join("")}
       </tbody>
     </table></div>`;
-  document.querySelectorAll("[data-client]").forEach(el=> el.onclick=()=> openClient(el.dataset.client));
-  document.querySelectorAll("[data-book]").forEach(el=> el.onclick=()=>{
-    const c = Data.get("clients").find(x=> x.id===el.dataset.book); if(!c) return;
-    goPanel("agenda"); openQuickAdd(todayISO(), "", { name:c.name, phone:c.phone, note:c.note });
+  document.querySelectorAll("#clList [data-client]").forEach(el=>{
+    el.onclick = (e)=>{ if(!e.target.closest("[data-book]")) openClient(el.dataset.client); };
+    el.onkeydown = (e)=>{ if(e.key==="Enter") openClient(el.dataset.client); };
   });
+  document.querySelectorAll("#clList [data-book]").forEach(el=> el.onclick=()=> bookForClient(el.dataset.book));
 }
-function openClient(id){
-  const c = Data.get("clients").find(x=>x.id===id); if(!c) return;
-  document.getElementById("clId").value = c.id;
+function bookForClient(id){
+  const c = Data.get("clients").find(x=> x.id===id); if(!c) return;
+  closeModal("client");
+  goPanel("agenda");
+  openQuickAdd(todayISO(), "", { name:c.name, phone:c.phone, note:c.note });
+}
+
+/* ---------- ficha de la clienta ---------- */
+let clTab = "resumen";
+function setClientTab(tab){
+  clTab = tab;
+  document.querySelectorAll("#clTabs button").forEach(b=> b.classList.toggle("active", b.dataset.ct===tab));
+  document.querySelectorAll("#clientMask .ct-pane").forEach(p=> p.hidden = p.dataset.pane!==tab);
+  document.getElementById("clFoot").hidden = !(tab==="medica" || tab==="datos");
+}
+function fillClientForms(c){
   document.getElementById("clName").value = c.name||"";
   document.getElementById("clPhone").value = c.phone||"";
+  document.getElementById("clBirth").value = c.birthDate||"";
+  document.getElementById("clBirth").max = todayISO();
+  document.getElementById("clEmail").value = c.email||"";
+  document.getElementById("clIg").value = c.instagram||"";
+  document.getElementById("clSource").value = c.source||"";
+  document.getElementById("clPrefs").value = c.prefs||"";
   document.getElementById("clNote").value = c.note||"";
-  document.getElementById("clMeta").textContent = `${(+c.visits||0)} visita(s) · última: ${c.lastVisit?fmtDate(c.lastVisit):"—"}`;
+  document.getElementById("clAllergies").value = c.allergies||"";
+  document.getElementById("clMeds").value = c.medications||"";
+  document.getElementById("clMedNotes").value = c.medicalNotes||"";
+  const conds = c.conditions||[];
+  document.getElementById("clConds").innerHTML = CONDITIONS.map(x=>
+    `<button type="button" class="cond-chip${conds.includes(x)?" on":""}" data-cond="${esc(x)}">${esc(x)}</button>`).join("");
+  document.getElementById("clMedUpd").textContent = c.medUpdatedAt ? `Última actualización: ${fmtStamp(c.medUpdatedAt)}` : "";
+}
+function openClient(id, tab){
+  const isNew = !id;
+  const c = isNew ? { name:"", phone:"" } : Data.get("clients").find(x=>x.id===id);
+  if(!c) return;
+  document.getElementById("clId").value = id || "";
+  document.getElementById("clientMask").classList.toggle("is-new", isNew);
+  fillClientForms(c);
+  renderClientProfile();
+  setClientTab(tab || (isNew ? "datos" : "resumen"));
+  document.getElementById("clDelete").hidden = isNew;
   openModal("client");
+  if(isNew) setTimeout(()=> document.getElementById("clName").focus(), 150);
+}
+function renderClientProfile(){
+  const id = document.getElementById("clId").value;
+  const hero = document.getElementById("clHero");
+  if(!id){
+    hero.innerHTML = `<span class="cl-av lg">+</span><div><h3>Nueva clienta</h3><div class="muted" style="font-size:.85rem">Llena sus datos y su ficha médica</div></div>`;
+    return;
+  }
+  const c = Data.get("clients").find(x=> x.id===id); if(!c) return;
+  const k = clientInsights(c);
+  const chips = [];
+  if(c.birthDate) chips.push(`<span class="cl-chip">${esc(birthdayLabel(c.birthDate))}</span>`);
+  if(k.since) chips.push(`<span class="cl-chip">Clienta desde ${monthYear(k.since)}</span>`);
+  if(c.source) chips.push(`<span class="cl-chip">Nos conoció por ${esc(c.source)}</span>`);
+  if(hasHealthAlert(c)) chips.push(`<span class="cl-chip warn">⚠ Alergias / cuidados</span>`);
+  hero.innerHTML = `
+    <span class="cl-av lg">${esc(initials(c.name))}</span>
+    <div class="cl-hero-main">
+      <h3>${esc(c.name)}</h3>
+      <div class="cl-contact">
+        ${c.phone?`<a href="${waLink(c.phone,'Hola '+c.name+', te escribo de '+CONFIG.businessName)}" target="_blank" rel="noopener">💬 ${esc(c.phone)}</a>`:""}
+        ${c.instagram?`<a href="${igLink(c.instagram)}" target="_blank" rel="noopener">📷 @${esc(c.instagram.replace(/^@/,""))}</a>`:""}
+        ${c.email?`<a href="mailto:${esc(c.email)}">✉ ${esc(c.email)}</a>`:""}
+      </div>
+      <div class="cl-chips">${chips.join("")}</div>
+    </div>
+    <button class="btn sm cl-book" type="button" data-clbook="${c.id}">+ Agendar</button>`;
+  hero.querySelector("[data-clbook]").onclick = ()=> bookForClient(c.id);
+
+  // --- Resumen ---
+  const next = k.upcoming[0];
+  const maxSvc = k.topSvc.length ? k.topSvc[0][1] : 1;
+  document.getElementById("clResumen").innerHTML = `
+    ${healthAlertHTML(c)}
+    <div class="cl-stats">
+      <div><span>Citas</span><b>${k.bks.filter(blocksTime).length}</b></div>
+      <div><span>Atendidas</span><b>${k.attended.length}</b></div>
+      <div><span>Servicios</span><b>${k.totalSvc}</b></div>
+      <div><span>Total gastado</span><b>${money(k.spent)}</b></div>
+      <div><span>Ticket promedio</span><b>${money(k.avg)}</b></div>
+      <div><span>No asistió / canceló</span><b>${k.noshow} / ${k.cancel}</b></div>
+    </div>
+    <div class="cl-grid">
+      <div class="cl-box">
+        <h4>Próxima cita</h4>
+        ${next?`<button type="button" class="cl-next" data-hx="${next.id}">
+            <b>${dayLabel(next.date)} · ${fmtRange12(next.time, endOf(next))}</b>
+            <span>${esc(servicesText(next))}</span>${statusPill(next.status, next)}</button>`
+          :`<p class="muted" style="margin:0">Sin citas próximas.</p>`}
+        <h4 style="margin-top:14px">Última visita</h4>
+        <p style="margin:0">${k.lastVisit?`${fmtDate(k.lastVisit)} <span class="muted">(${dayLabel(k.lastVisit)})</span>`:'<span class="muted">—</span>'}</p>
+      </div>
+      <div class="cl-box">
+        <h4>Servicios que más se hace</h4>
+        ${k.topSvc.length ? k.topSvc.slice(0,5).map(([n,q])=>`
+          <div class="cl-bar"><span>${esc(n)}</span><i style="width:${Math.max(8,q/maxSvc*100)}%"></i><b>${q}</b></div>`).join("")
+          : `<p class="muted" style="margin:0">Aún sin servicios.</p>`}
+      </div>
+    </div>
+    ${(c.prefs||c.note)?`<div class="cl-box" style="margin-top:12px">
+      ${c.prefs?`<h4>Preferencias</h4><p class="pre">${esc(c.prefs)}</p>`:""}
+      ${c.note?`<h4>Nota / diagnóstico</h4><p class="pre">${esc(c.note)}</p>`:""}</div>`:""}`;
+
+  // --- Historial (citas y cobros) ---
+  const salesByBk = {};
+  k.sales.forEach(s=>{ if(s.bookingId) salesByBk[s.bookingId] = s; });
+  const loose = k.sales.filter(s=> !s.bookingId);
+  const t = todayISO();
+  const item = (b)=>{
+    const d = isoToDate(b.date), s = salesByBk[b.id];
+    const src = b.source==="web" ? "Página web" : b.source==="admin" ? "Administrador" : "";
+    return `<button type="button" class="hx-item ${blocksTime(b)?"":"off"}" data-hx="${b.id}">
+      <div class="hx-date"><b>${d.getDate()}</b><span>${d.toLocaleDateString("es-MX",{month:"short"}).replace(".","")} ${d.getFullYear()}</span></div>
+      <div class="hx-main">
+        <div class="hx-top"><b>${DAYS_SHORT[d.getDay()]} · ${fmtRange12(b.time, endOf(b))}</b>${statusPill(b.status, b)}</div>
+        <div>${(b.items||[]).map(i=> `${i.qty>1?i.qty+"× ":""}${esc(i.name)}`).join(", ")}</div>
+        <div class="muted hx-meta">${b.createdAt?`Agendó el ${fmtStamp(b.createdAt)}`:""}${src?` · ${src}`:""}${b.staffName?` · con ${esc(b.staffName)}`:""}${s?` · Pagó ${money(s.total)} (${s.method})`:""}${(b.history||[]).length?` · reprogramada ${(b.history||[]).length===1?"1 vez":(b.history||[]).length+" veces"}`:""}</div>
+        ${b.client.note?`<div class="hx-note">📝 ${esc(b.client.note)}</div>`:""}
+      </div></button>`;
+  };
+  const up = k.bks.filter(b=> b.date>=t && b.status==="pendiente");
+  const past = k.bks.filter(b=> !up.includes(b)).reverse();
+  document.getElementById("clHistorial").innerHTML =
+    (!k.bks.length && !loose.length) ? `<div class="empty-state"><div class="big">📅</div>Todavía no tiene citas.</div>` :
+    (up.length?`<h4 class="hx-sec">Próximas</h4>${up.map(item).join("")}`:"") +
+    (past.length?`<h4 class="hx-sec">Anteriores</h4>${past.map(item).join("")}`:"") +
+    (loose.length?`<h4 class="hx-sec">Ventas en caja</h4>${loose.slice().reverse().map(s=>`
+      <div class="hx-item static"><div class="hx-date"><b>${isoToDate(s.date).getDate()}</b><span>${isoToDate(s.date).toLocaleDateString("es-MX",{month:"short",year:"numeric"}).replace(".","")}</span></div>
+      <div class="hx-main"><div class="hx-top"><b>Ticket #${s.ticketNo}</b>${methodPill(s.method)}</div>
+      <div>${s.items.map(i=> esc(i.name)).join(", ")}</div><div class="muted hx-meta">${money(s.total)}</div></div></div>`).join("")}`:"");
+
+  document.querySelectorAll("#clientMask [data-hx]").forEach(el=> el.onclick = ()=>{ closeModal("client"); openCitaDetail(el.dataset.hx); });
 }
 function saveClient(){
   const id = document.getElementById("clId").value;
-  const c = Data.get("clients").find(x=>x.id===id); if(!c) return;
-  const name = document.getElementById("clName").value.trim();
-  if(name.length<2){ toast("Escribe el nombre."); return; }
-  Data.put("clients", { ...c, name, phone:document.getElementById("clPhone").value.trim(), note:document.getElementById("clNote").value.trim() });
-  closeModal("client"); toast("Clienta actualizada");
+  const old = id ? Data.get("clients").find(x=>x.id===id) : null;
+  if(id && !old) return;
+  const v = (k)=> document.getElementById(k).value.trim();
+  const name = v("clName");
+  if(name.length<2){ setClientTab("datos"); toast("Escribe el nombre."); return; }
+  const conditions = [...document.querySelectorAll("#clConds .cond-chip.on")].map(b=> b.dataset.cond);
+  const med = { allergies:v("clAllergies"), medications:v("clMeds"), medicalNotes:v("clMedNotes"), conditions };
+  const medChanged = !old || ["allergies","medications","medicalNotes"].some(k=> (old[k]||"")!==med[k]) ||
+                     (old.conditions||[]).join("|")!==conditions.join("|");
+  const now = new Date().toISOString();
+  const data = {
+    ...(old || { id:uid(), visits:0, createdAt:now }),
+    name, phone:v("clPhone"), note:v("clNote"),
+    birthDate:v("clBirth"), email:v("clEmail"), instagram:v("clIg").replace(/^@/,""),
+    source:v("clSource"), prefs:v("clPrefs"),
+    ...med, updatedAt:now,
+  };
+  if(medChanged && (med.allergies||med.medications||med.medicalNotes||conditions.length)) data.medUpdatedAt = now;
+  Data.put("clients", data);
+  toast(old ? "Ficha actualizada" : "✓ Clienta registrada");
+  document.getElementById("clId").value = data.id;
+  document.getElementById("clientMask").classList.remove("is-new");
+  document.getElementById("clDelete").hidden = false;
+  setTimeout(()=>{ if(document.getElementById("clientMask").classList.contains("open")){ fillClientForms(data); renderClientProfile(); setClientTab("resumen"); } }, 250);
 }
 function deleteClient(){
   const id = document.getElementById("clId").value;
-  if(!confirm("¿Eliminar esta clienta? Sus citas no se borran.")) return;
+  if(!id) return;
+  if(!confirm("¿Eliminar esta clienta y su ficha? Sus citas y cobros no se borran.")) return;
   Data.remove("clients", id); closeModal("client"); toast("Clienta eliminada");
+}
+// si cambian los datos mientras la ficha está abierta, se actualiza sola
+function refreshClientIfOpen(){
+  if(document.getElementById("clientMask").classList.contains("open") && document.getElementById("clId").value) renderClientProfile();
 }
 
 /* ============================================================

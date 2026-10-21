@@ -7,7 +7,7 @@
    • Al tocar una notificación abre/enfoca el panel de administrador.
    Si cambias archivos y quieres forzar la actualización, sube el número de VERSION.
    ========================================================================== */
-const VERSION = "lume-v3";
+const VERSION = "lume-v4";
 const SHELL = [
   "./", "index.html", "agendar.html", "admin.html",
   "styles.css", "app.js", "firebase.js", "ticket-pdf.js",

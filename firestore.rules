@@ -83,13 +83,22 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // ---------- clientas ----------
+    // ---------- clientas (incluye ficha médica: solo la administradora) ----------
     function validClient(d) {
-      return d.size() <= 20
+      return d.size() <= 40
         && str(d.name, 100)
         && str(d.get('phone', ''), 30)
         && str(d.get('note', ''), 2000)
-        && num(d.get('visits', 0), 0, 100000);
+        && num(d.get('visits', 0), 0, 100000)
+        && (d.get('birthDate', '') == '' || isDate(d.get('birthDate', '')))
+        && str(d.get('email', ''), 120)
+        && str(d.get('instagram', ''), 60)
+        && str(d.get('source', ''), 40)
+        && str(d.get('prefs', ''), 2000)
+        && str(d.get('allergies', ''), 2000)
+        && str(d.get('medications', ''), 1000)
+        && str(d.get('medicalNotes', ''), 3000)
+        && d.get('conditions', []) is list && d.get('conditions', []).size() <= 40;
     }
     match /clients/{id} {
       allow read, delete: if isAdmin();
