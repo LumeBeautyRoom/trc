@@ -1,0 +1,146 @@
+rules_version = '2';
+
+// ==========================================================================
+// LUMÉ Beauty Room — reglas de Firestore (con inicio de sesión del admin)
+// --------------------------------------------------------------------------
+// Pégalas en: Firebase Console → Firestore Database → Reglas → Publicar.
+// ORDEN: primero sube la página nueva y entra una vez al admin; después publica.
+//
+// • Administradora (usuario "lume" = lume@lumebeautyroom.com): lee y edita todo.
+// • Página pública: solo puede
+//     – ver los horarios ocupados (colección "busy": fecha, hora y duración,
+//       sin nombres ni teléfonos),
+//     – crear una cita nueva "pendiente" y apartar su horario.
+//   No puede leer, cambiar ni borrar citas, clientas, caja ni inventario.
+// • Los cobros nunca se editan ni se borran.
+// Si agregas otra usuaria administradora, súmala aquí y en CONFIG.adminUsers (app.js).
+// ==========================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- ¿quién es? ----------
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email in ['lume@lumebeautyroom.com'];
+    }
+
+    // ---------- ayudantes ----------
+    function str(v, max)   { return v is string && v.size() <= max; }
+    function num(v, lo, hi){ return (v is int || v is float) && v >= lo && v <= hi; }
+    function isDate(v)     { return v is string && v.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'); }
+    function isTime(v)     { return v is string && v.matches('^[0-9]{2}:[0-9]{2}$'); }
+    // el id del documento debe coincidir con el campo "id" (así guarda la app)
+    function sameId(id)    { return request.resource.data.id == id; }
+
+    // ---------- citas y bloqueos de horario ----------
+    function validBooking(d) {
+      return d.size() <= 40
+        && isDate(d.date) && isTime(d.time)
+        && num(d.dur, 1, 900)
+        && d.status in ['pendiente', 'cobrada', 'cancelada', 'noshow', 'bloqueo']
+        && d.client is map
+        && str(d.client.name, 100)
+        && str(d.client.get('phone', ''), 30)
+        && str(d.client.get('note', ''), 1000)
+        && d.items is list && d.items.size() <= 40
+        && num(d.get('estTotal', 0), 0, 1000000);
+    }
+    // lo que puede crear una clienta desde la página
+    function publicBooking(d) {
+      return d.status == 'pendiente'
+        && d.source == 'web'
+        && !('type' in d) && !('clientId' in d) && !('confirmed' in d)
+        && d.client.name.size() >= 2
+        && d.items.size() >= 1;
+    }
+    match /bookings/{id} {
+      allow read: if isAdmin();
+      allow create: if sameId(id) && validBooking(request.resource.data)
+                    && (isAdmin() || publicBooking(request.resource.data));
+      allow update: if isAdmin() && sameId(id) && validBooking(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // ---------- horarios ocupados (lo único público) ----------
+    function validBusy(d) {
+      return d.keys().hasOnly(['id', 'date', 'time', 'dur', 'staffId'])
+        && isDate(d.date) && isTime(d.time) && num(d.dur, 1, 900)
+        && str(d.get('staffId', ''), 40);
+    }
+    // una clienta solo puede apartar el horario de la cita que acaba de crear
+    function matchesBooking(id, d) {
+      return exists(/databases/$(database)/documents/bookings/$(id))
+        && get(/databases/$(database)/documents/bookings/$(id)).data.date == d.date
+        && get(/databases/$(database)/documents/bookings/$(id)).data.time == d.time
+        && get(/databases/$(database)/documents/bookings/$(id)).data.dur == d.dur;
+    }
+    match /busy/{id} {
+      allow read: if true;
+      allow create: if sameId(id) && validBusy(request.resource.data)
+                    && (isAdmin() || matchesBooking(id, request.resource.data));
+      allow update: if isAdmin() && sameId(id) && validBusy(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // ---------- clientas ----------
+    function validClient(d) {
+      return d.size() <= 20
+        && str(d.name, 100)
+        && str(d.get('phone', ''), 30)
+        && str(d.get('note', ''), 2000)
+        && num(d.get('visits', 0), 0, 100000);
+    }
+    match /clients/{id} {
+      allow read, delete: if isAdmin();
+      allow create, update: if isAdmin() && sameId(id) && validClient(request.resource.data);
+    }
+
+    // ---------- cobros: solo se crean, nunca se editan ni borran ----------
+    function validSale(d) {
+      return d.size() <= 20
+        && isDate(d.date)
+        && num(d.total, 0, 1000000)
+        && num(d.ticketNo, 0, 100000000)
+        && d.method in ['efectivo', 'transferencia', 'tarjeta']
+        && d.client is map && str(d.client.name, 100)
+        && d.items is list && d.items.size() <= 60;
+    }
+    match /sales/{id} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && sameId(id) && validSale(request.resource.data);
+      allow update, delete: if false;
+    }
+
+    // ---------- gastos ----------
+    function validExpense(d) {
+      return d.size() <= 12
+        && isDate(d.date)
+        && str(d.concept, 200)
+        && str(d.get('category', ''), 50)
+        && num(d.amount, 0, 1000000);
+    }
+    match /expenses/{id} {
+      allow read, delete: if isAdmin();
+      allow create, update: if isAdmin() && sameId(id) && validExpense(request.resource.data);
+    }
+
+    // ---------- inventario ----------
+    function validProduct(d) {
+      return d.size() <= 12
+        && str(d.name, 150)
+        && num(d.qty, 0, 1000000)
+        && num(d.min, 0, 1000000)
+        && num(d.cost, 0, 1000000);
+    }
+    match /inventory/{id} {
+      allow read, delete: if isAdmin();
+      allow create, update: if isAdmin() && sameId(id) && validProduct(request.resource.data);
+    }
+
+    // ---------- todo lo demás: cerrado ----------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

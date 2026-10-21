@@ -20,10 +20,15 @@ const FIREBASE_CONFIG = {
 };
 
 const Data = (function(){
-  const cols = ["bookings","sales","expenses","inventory","clients"];
-  const state = { bookings:[], sales:[], expenses:[], inventory:[], clients:[] };
+  // "busy" = solo los horarios ocupados (fecha, hora, duración), lo único que ve la página pública
+  const cols = ["bookings","sales","expenses","inventory","clients","busy"];
+  const state = { bookings:[], sales:[], expenses:[], inventory:[], clients:[], busy:[] };
   let db = null, mode = "local", started = false;
   let changeCb = function(){};
+  let errorCb = function(){};
+  // se resuelve cuando ya llegó la primera carga de datos (para la pantalla de carga)
+  let readyResolve;
+  const readyP = new Promise(r=> readyResolve = r);
 
   const lkey = (c)=> "lume_" + c;
   function loadLocal(){ cols.forEach(c=> state[c] = Store.get(lkey(c), [])); }
@@ -59,27 +64,36 @@ const Data = (function(){
     started = true;
 
     if(mode === "firebase"){
+      const pending = new Set(list);
+      const arrived = (c)=>{ pending.delete(c); if(!pending.size) readyResolve(mode); };
       list.forEach(c=>{
         db.collection(c).onSnapshot(
           snap=>{
             state[c] = snap.docs.map(d=> d.data());
             try{ saveLocal(c); }catch(e){}     // caché local de respaldo
+            arrived(c);
             changeCb();
           },
-          err=>{ console.warn("[LUMÉ] Error de sincronización en '"+c+"':", err.message); }
+          err=>{ console.warn("[LUMÉ] Error de sincronización en '"+c+"':", err.message); arrived(c); }
         );
       });
     } else {
       loadLocal();
+      readyResolve(mode);
       changeCb();
     }
+  }
+
+  // Promesa que se cumple con la primera carga de datos (o al pasar 'ms' milisegundos).
+  function whenReady(ms){
+    return ms ? Promise.race([readyP, new Promise(r=> setTimeout(r, ms))]) : readyP;
   }
 
   // Crea o actualiza un documento (por su campo id).
   async function put(collection, obj){
     if(mode === "firebase" && db){
       try{ await db.collection(collection).doc(String(obj.id)).set(obj); return true; }
-      catch(e){ console.warn("[LUMÉ] Error al guardar en '"+collection+"', respaldo local:", e); }
+      catch(e){ console.warn("[LUMÉ] Error al guardar en '"+collection+"', respaldo local:", e); errorCb(e, collection); }
     }
     const arr = state[collection];
     const i = arr.findIndex(x=> x.id === obj.id);
@@ -92,7 +106,7 @@ const Data = (function(){
   async function remove(collection, id){
     if(mode === "firebase" && db){
       try{ await db.collection(collection).doc(String(id)).delete(); return true; }
-      catch(e){ console.warn("[LUMÉ] Error al eliminar en '"+collection+"', respaldo local:", e); }
+      catch(e){ console.warn("[LUMÉ] Error al eliminar en '"+collection+"', respaldo local:", e); errorCb(e, collection); }
     }
     state[collection] = state[collection].filter(x=> x.id !== id);
     saveLocal(collection); changeCb();
@@ -108,7 +122,40 @@ const Data = (function(){
 
   const getMode = ()=> mode;
 
-  return { init, startSync, put, remove, get, nextTicketNo, getMode };
+  // avisa cuando Firebase rechaza un guardado (sin permiso, sin sesión…)
+  const onError = (cb)=>{ errorCb = cb || function(){}; };
+
+  return { init, startSync, whenReady, put, remove, get, nextTicketNo, getMode, onError };
+})();
+
+/* ==========================================================================
+   Inicio de sesión del administrador (Firebase Authentication)
+   • El usuario "lume" se convierte en el correo lume@<CONFIG.adminDomain>.
+   • La cuenta se crea en Firebase Console → Authentication → Users.
+   • La sesión queda guardada en el dispositivo hasta tocar "Salir".
+   ========================================================================== */
+const Auth = (function(){
+  const available = ()=> typeof firebase !== "undefined" && !!firebase.auth && !!(firebase.apps && firebase.apps.length);
+  function toEmail(user){
+    user = (user||"").trim().toLowerCase();
+    return user.includes("@") ? user : user + "@" + (CONFIG.adminDomain || "lumebeautyroom.com");
+  }
+  function onChange(cb){
+    if(!available()){ cb(null); return; }
+    firebase.auth().onAuthStateChanged(cb);
+  }
+  function signIn(user, pass){ return firebase.auth().signInWithEmailAndPassword(toEmail(user), pass); }
+  function signOut(){ return available() ? firebase.auth().signOut() : Promise.resolve(); }
+  // mensaje entendible para los errores de Firebase
+  function errorText(e){
+    const c = (e && e.code) || "";
+    if(/invalid-credential|wrong-password|user-not-found|invalid-email|invalid-login/.test(c)) return "Usuario o contraseña incorrectos.";
+    if(/too-many-requests/.test(c)) return "Demasiados intentos. Espera unos minutos e intenta de nuevo.";
+    if(/network/.test(c)) return "Sin conexión a internet. Revisa tu red.";
+    if(/operation-not-allowed/.test(c)) return "Activa Correo/Contraseña en Firebase → Authentication → Sign-in method.";
+    return "No se pudo iniciar sesión (" + (c || "error") + ").";
+  }
+  return { available, onChange, signIn, signOut, toEmail, errorText };
 })();
 
 /* Registra/actualiza una clienta y cuenta la visita. Devuelve su id. */

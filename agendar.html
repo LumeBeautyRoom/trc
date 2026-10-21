@@ -2,19 +2,27 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Agendar · LUMÉ Beauty Room</title>
-<link rel="icon" href="logo.png">
+<meta name="description" content="Agenda tu cita en LUMÉ Beauty Room: uñas, pestañas, cejas, cabello, maquillaje y peinado.">
+<meta name="theme-color" content="#efece4">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="LUMÉ">
 <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <script src="loader.js" data-wait="manual"></script>
   <!-- Encabezado -->
   <header class="page-head">
     <div class="container row">
-      <a href="index.html"><img src="logo.png" alt="LUMÉ Beauty Room"></a>
+      <a href="index.html"><img src="logo-crop.png" alt="LUMÉ Beauty Room"></a>
       <div class="links">
         <a id="waBtn" class="icon-btn wa" href="#" target="_blank" rel="noopener" aria-label="WhatsApp">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.004c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Zm0 1.67c2.2 0 4.27.86 5.83 2.42a8.2 8.2 0 0 1 2.42 5.82c0 4.54-3.7 8.24-8.25 8.24a8.2 8.2 0 0 1-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.18 8.18 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24Zm-4.53 4.4c-.21 0-.55.08-.84.39-.29.31-1.1 1.08-1.1 2.62 0 1.55 1.13 3.04 1.28 3.25.16.21 2.2 3.36 5.32 4.58.74.32 1.32.51 1.77.65.74.24 1.42.2 1.96.12.6-.09 1.84-.75 2.1-1.48.26-.73.26-1.35.18-1.48-.08-.13-.29-.21-.6-.36-.31-.16-1.84-.91-2.12-1.01-.29-.11-.5-.16-.71.16-.21.31-.81 1.01-1 1.22-.18.21-.37.24-.68.08-.31-.16-1.31-.48-2.5-1.54-.92-.82-1.55-1.84-1.73-2.15-.18-.31-.02-.48.14-.63.14-.14.31-.37.47-.55.16-.18.21-.31.31-.52.11-.21.05-.39-.03-.55-.08-.16-.71-1.7-.97-2.33-.26-.62-.52-.53-.71-.54l-.61-.01Z"/></svg>
@@ -63,7 +71,7 @@
         <input class="input" id="cPhone" type="tel" placeholder="10 dígitos" autocomplete="tel" inputmode="numeric">
         <div class="err-msg">Escribe un teléfono válido (al menos 10 dígitos).</div>
       </div>
-      <div class="field">
+      <div class="field" id="staffField">
         <label>¿Con quién? <span class="muted">(opcional)</span></label>
         <select class="input" id="cStaff"></select>
       </div>
@@ -73,7 +81,8 @@
       </div>
       <div class="field">
         <label>Día <span class="req">*</span></label>
-        <input class="input" id="cDate" type="date">
+        <div class="day-strip" id="dayStrip" role="listbox" aria-label="Elige un día"></div>
+        <label class="other-date">o elige otra fecha <input class="input" id="cDate" type="date"></label>
         <div class="err-msg">Elige un día.</div>
       </div>
       <div class="field">
@@ -104,6 +113,10 @@
         <button class="btn soft" id="passDownload">⬇ Descargar</button>
         <button class="btn" id="passWhats">Enviar por WhatsApp</button>
       </div>
+      <div class="pass-actions" style="margin-top:8px">
+        <a class="btn soft sm" id="passGcal" href="#" target="_blank" rel="noopener">📅 Google Calendar</a>
+        <button class="btn soft sm" id="passIcs" type="button">🍎 Calendario (iPhone)</button>
+      </div>
       <p style="margin-top:14px">
         <a href="index.html" class="muted" style="text-decoration:none">Volver al inicio</a>
         &nbsp;·&nbsp;
@@ -118,6 +131,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="app.js"></script>
   <script src="firebase.js"></script>
+  <script src="pwa.js"></script>
   <script>
     Data.init(); // conecta con Firebase (o modo local si no hay internet)
     document.getElementById("waBtn").href = waLink(CONFIG.whatsapp, "¡Hola LUMÉ! Quiero agendar una cita ✨");
@@ -225,10 +239,13 @@
       const date = document.getElementById("cDate").value;
       if(!date){ box.innerHTML = `<div class="muted" style="font-size:.88rem">Elige un día para ver los horarios disponibles.</div>`; cTime.value=""; return; }
       const staffId = document.getElementById("cStaff").value;
-      const slots = availableSlots(Data.get("bookings"), date, totalDur(), staffId);
-      if(!slots.length){ box.innerHTML = `<div class="muted" style="font-size:.88rem">No hay horarios disponibles ese día 🗓️ Prueba con otro día.</div>`; cTime.value=""; return; }
+      const slots = availableSlots(Data.get("busy"), date, totalDur(), staffId, null, { public:true });
+      if(!slots.length){
+        const why = isClosedDay(date) ? "Ese día no abrimos 🗓️" : "No hay horarios disponibles ese día 🗓️";
+        box.innerHTML = `<div class="muted" style="font-size:.88rem">${why} Prueba con otro día.</div>`; cTime.value=""; return;
+      }
       if(cTime.value && !slots.includes(cTime.value)) cTime.value="";
-      box.innerHTML = slots.map(t=>`<button type="button" class="slot-btn${cTime.value===t?" active":""}" data-slot="${t}">${t}</button>`).join("");
+      box.innerHTML = slotGroupsHTML(slots, cTime.value, "slot");
       box.querySelectorAll("[data-slot]").forEach(bn=> bn.addEventListener("click", ()=>{
         cTime.value = bn.dataset.slot;
         box.querySelectorAll(".slot-btn").forEach(x=> x.classList.remove("active"));
@@ -265,9 +282,39 @@
     // inicializar los controles +/− de cada servicio
     SERVICES.forEach(g => g.items.forEach(it => syncCard(it.id)));
 
-    // fecha mínima = hoy
+    // fecha mínima = hoy, máxima según CONFIG.maxDaysAhead
     const dateInput = document.getElementById("cDate");
     dateInput.min = todayISO();
+    dateInput.max = addDaysISO(todayISO(), CONFIG.maxDaysAhead||60);
+
+    // tira de días (próximas 2 semanas) para elegir con un toque
+    const DSHORT = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+    function renderDayStrip(){
+      const strip = document.getElementById("dayStrip");
+      const sel = dateInput.value, t = todayISO();
+      let html = "";
+      for(let i=0;i<14;i++){
+        const iso = addDaysISO(t,i), d = new Date(iso+"T00:00:00");
+        const closed = isClosedDay(iso);
+        const top = i===0 ? "Hoy" : i===1 ? "Mañana" : DSHORT[d.getDay()];
+        html += `<button type="button" class="day-chip${iso===sel?" active":""}" data-day="${iso}" ${closed?"disabled":""} role="option" aria-selected="${iso===sel}">
+          <span class="dw">${top}</span><span class="dn">${d.getDate()}</span><span class="dm">${d.toLocaleDateString("es-MX",{month:"short"}).replace(".","")}</span></button>`;
+      }
+      strip.innerHTML = html;
+      strip.querySelectorAll("[data-day]").forEach(b=> b.onclick = ()=>{
+        dateInput.value = b.dataset.day;
+        dateInput.closest(".field").classList.remove("invalid");
+        renderDayStrip(); renderSlots();
+      });
+      const act = strip.querySelector(".active");
+      if(act) act.scrollIntoView({ block:"nearest", inline:"center" });
+    }
+    dateInput.addEventListener("change", ()=>{ renderDayStrip(); });
+
+    // recordar nombre y teléfono para la próxima vez (solo en este teléfono)
+    const ME_KEY = "lume_me";
+    const me = Store.get(ME_KEY, null);
+    if(me){ document.getElementById("cName").value = me.name||""; document.getElementById("cPhone").value = me.phone||""; }
 
     // validación de campos
     function markField(el, ok){
@@ -304,12 +351,21 @@
       ok = markField(document.getElementById("cSlots"), !!time) && ok;
       if(!ok){ toast("Completa los campos obligatorios (incluye elegir un horario)."); return; }
 
-      const clientId = upsertClient(name, phone, note);
+      // ¿alguien más tomó ese horario mientras llenabas el formulario?
+      if(!availableSlots(Data.get("busy"), date, dur, staffId, null, { public:true }).includes(time)){
+        document.getElementById("cTime").value = "";
+        renderSlots();
+        toast("Ese horario se acaba de ocupar 😕 Elige otro, por favor.");
+        return;
+      }
+
+      try{ Store.set(ME_KEY, { name, phone }); }catch(e){}
+      // la ficha de la clienta la crea el administrador (la página pública no puede ver clientas)
       const booking = {
         id: uid(),
-        createdAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(), source: "web",
         date, time, dur, end: minToHM(hmToMin(time)+dur),
-        client: { name, phone, note }, clientId,
+        client: { name, phone, note },
         staffId, staffName: st ? st.name : "",
         items: ids.map(id => {
           const it = SERVICE_INDEX[id];
@@ -319,13 +375,19 @@
         status: "pendiente"
       };
 
-      // guardar en Firebase (con respaldo local automático)
+      // guardar en Firebase. Si tarda (internet lento) Firebase la envía en cuanto pueda;
+      // si la rechaza o no hay Firebase, avisamos para que no crea que quedó agendada.
       confirmBtn.disabled = true;
       confirmBtn.textContent = "Agendando…";
-      try{ await Promise.race([ Data.put("bookings", booking), wait(5000) ]); }
-      catch(e){ /* si algo falla, Data ya respaldó en local */ }
+      const saved = await Promise.race([ Data.put("bookings", booking), wait(5000).then(()=> "pendiente") ]).catch(()=> false);
       confirmBtn.disabled = false;
       confirmBtn.textContent = "Agendar";
+      if(saved===false || Data.getMode()!=="firebase"){
+        toast("No se pudo agendar 😕 Revisa tu internet o escríbenos por WhatsApp.");
+        return;
+      }
+      // apartar el horario para que nadie más lo tome
+      Data.put("busy", { id:booking.id, date, time, dur, staffId: staffId||"" });
 
       // mostrar tarjeta de confirmación tipo wallet
       closeDrawer();
@@ -335,7 +397,8 @@
       Object.keys(cart).forEach(k=> delete cart[k]);
       SERVICES.forEach(g => g.items.forEach(it => syncCard(it.id)));
       syncCart();
-      ["cName","cPhone","cNote","cDate","cTime"].forEach(id=> document.getElementById(id).value="");
+      ["cNote","cDate","cTime"].forEach(id=> document.getElementById(id).value="");
+      renderDayStrip();
     });
 
     /* ---------- Tarjeta wallet de confirmación ---------- */
@@ -382,7 +445,7 @@
       const dateStr=dt.toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"});
       label(ctx,"DÍA",64,y); label(ctx,"HORA",W/2+40,y); y+=40;
       ctx.fillStyle="#141311"; ctx.font="500 28px 'Jost',Arial,sans-serif"; ctx.fillText(dayName,64,y);
-      ctx.font="700 36px 'Archivo Black',Arial,sans-serif"; ctx.fillText(bk.time||"",W/2+40,y);
+      ctx.font="700 34px 'Archivo Black',Arial,sans-serif"; ctx.fillText(fmt12(bk.time),W/2+40,y);
       y+=34; ctx.fillStyle="#6f6d64"; ctx.font="400 22px 'Jost',Arial,sans-serif"; ctx.fillText(dateStr,64,y);
       if(bk.staffName){ y+=30; ctx.fillStyle="#8a877d"; ctx.font="400 21px 'Jost',Arial,sans-serif"; ctx.fillText("con "+bk.staffName, 64, y); }
       y+=56;
@@ -414,8 +477,18 @@
       try{ passUrl=await makeWalletCard(bk); }
       catch(e){ toast("Cita guardada ✓"); return; }
       document.getElementById("passImg").src=passUrl;
+      document.getElementById("passGcal").href=gcalLink(bk);
       document.getElementById("passMask").classList.add("open");
     }
+    // agregar la cita al calendario del teléfono (.ics funciona en iPhone y Android)
+    document.getElementById("passIcs").addEventListener("click", ()=>{
+      if(!passBk) return;
+      const url = URL.createObjectURL(new Blob([icsText(passBk)], { type:"text/calendar" }));
+      const a = document.createElement("a");
+      a.href = url; a.download = "cita-lume.ics";
+      document.body.appendChild(a); a.click();
+      setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 800);
+    });
     function downloadPass(){
       if(!passUrl) return;
       const a=document.createElement("a");
@@ -427,10 +500,11 @@
       if(!passBk) return;
       downloadPass();
       const dt=new Date(passBk.date+"T00:00:00");
-      const txt=`✨ ¡Cita confirmada en ${CONFIG.businessName}!\n\n`+
+      const txt=`✨ ¡Hola! Acabo de agendar mi cita en ${CONFIG.businessName}\n\n`+
         `👤 ${passBk.client.name}\n📅 ${DAYS_FULL[dt.getDay()]} ${passBk.date.split("-").reverse().join("/")}\n`+
-        `🕐 ${passBk.time}${passBk.staffName?("\n👩 con "+passBk.staffName):""}\n💅 ${passBk.items.map(i=>i.name).join(", ")}\n\n(Te comparto tu tarjeta de confirmación 📎)`;
-      window.open(waLink(passBk.client.phone||CONFIG.whatsapp, txt), "_blank");
+        `🕐 ${fmt12(passBk.time)}${passBk.staffName?("\n👩 con "+passBk.staffName):""}\n💅 ${passBk.items.map(i=>i.name).join(", ")}\n\n(Les comparto mi tarjeta de confirmación 📎)`;
+      // se envía al WhatsApp del salón (antes se abría el chat con el propio número de la clienta)
+      window.open(waLink(CONFIG.whatsapp, txt), "_blank");
     });
     document.getElementById("passAgain").addEventListener("click", (e)=>{
       e.preventDefault();
@@ -446,10 +520,15 @@
     }
 
     // ---- personal + sincronización (AL FINAL, cuando todo está definido) ----
-    document.getElementById("cStaff").innerHTML = (CONFIG.staff||[]).map(s=>`<option value="${s.id}">${s.name}</option>`).join("");
+    document.getElementById("cStaff").innerHTML = (CONFIG.staff||[]).map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join("");
+    if((CONFIG.staff||[]).length < 2) document.getElementById("staffField").style.display = "none";
     document.getElementById("cDate").addEventListener("change", renderSlots);
     document.getElementById("cStaff").addEventListener("change", renderSlots);
-    Data.startSync(renderSlots, ["bookings","clients"]);
+    Data.startSync(renderSlots, ["busy"]);   // solo horarios ocupados, sin datos de clientas
+    Data.whenReady(6000).then(()=> window.LumeLoader && LumeLoader.done());
+    renderDayStrip();
+    // los horarios de hoy se van cerrando con la hora: refrescar cada minuto
+    setInterval(()=>{ if(document.getElementById("drawer").classList.contains("open")) renderSlots(); }, 60000);
     syncCart();
   </script>
 </body>

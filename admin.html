@@ -2,27 +2,41 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Administrador · LUMÉ Beauty Room</title>
-<link rel="icon" href="logo.png">
+<meta name="theme-color" content="#141311">
+<meta name="robots" content="noindex">
+<link rel="manifest" href="admin.webmanifest">
+<link rel="icon" href="admin-icon-192.png">
+<link rel="apple-touch-icon" href="admin-apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="LUMÉ Admin">
 <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="admin-body">
+<script src="loader.js" data-wait="manual"></script>
 
 <!-- ====================== GATE / LOGIN ====================== -->
 <div class="gate" id="gate">
   <div class="box">
-    <img src="logo.png" alt="LUMÉ Beauty Room">
+    <img src="logo-crop.png" alt="LUMÉ Beauty Room">
     <h3 class="display" style="font-size:1.3rem;margin-bottom:6px">ADMINISTRADOR</h3>
     <p class="muted" style="margin:0 0 18px;font-size:.9rem">Ingresa la contraseña para continuar</p>
-    <div class="field">
-      <input class="input" id="pass" type="password" placeholder="Contraseña" style="text-align:center">
-      <div class="err-msg" id="passErr">Contraseña incorrecta.</div>
-    </div>
-    <button class="btn block" id="loginBtn">Entrar</button>
+    <form id="loginForm" autocomplete="on">
+      <div class="field">
+        <input class="input" id="user" type="text" placeholder="Usuario" autocomplete="username" autocapitalize="none" spellcheck="false" style="text-align:center">
+      </div>
+      <div class="field">
+        <input class="input" id="pass" type="password" placeholder="Contraseña" autocomplete="current-password" style="text-align:center">
+        <div class="err-msg" id="passErr">Usuario o contraseña incorrectos.</div>
+      </div>
+      <button class="btn block" id="loginBtn" type="submit">Entrar</button>
+    </form>
     <p style="margin-top:16px"><a href="index.html" class="muted" style="font-size:.85rem">← Volver al inicio</a></p>
   </div>
 </div>
@@ -30,16 +44,20 @@
 <!-- ====================== SHELL ====================== -->
 <div class="admin-shell" id="shell" style="display:none">
   <div class="admin-top">
-    <a href="index.html"><img src="logo.png" alt="LUMÉ"></a>
-    <nav class="tabs">
-      <button class="tab active" data-panel="agenda">Agenda</button>
-      <button class="tab" data-panel="clientas">Clientas</button>
-      <button class="tab" data-panel="caja">Caja</button>
-      <button class="tab" data-panel="reportes">Reportes</button>
-      <button class="tab" data-panel="inventario">Inventario</button>
+    <a href="index.html" class="brand"><img src="logo-crop.png" alt="LUMÉ"></a>
+    <nav class="tabs" aria-label="Secciones">
+      <button class="tab active" data-panel="agenda"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Agenda</span></button>
+      <button class="tab" data-panel="clientas"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5c1.2-4 4.2-6 7.5-6s6.3 2 7.5 6"/></svg><span>Clientas</span></button>
+      <button class="tab" data-panel="caja"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12.5" rx="2.5"/><circle cx="12" cy="12.25" r="2.6"/><path d="M6.5 9.5v.01M17.5 15v.01"/></svg><span>Caja</span></button>
+      <button class="tab" data-panel="reportes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20.5h16M7 17v-5M12 17V7M17 17v-8"/></svg><span>Reportes</span></button>
+      <button class="tab" data-panel="inventario"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5 12 3.5l8.5 4v9L12 20.5l-8.5-4z"/><path d="M3.5 7.5 12 11.5l8.5-4M12 11.5v9"/></svg><span>Inventario</span></button>
     </nav>
-    <div style="display:flex;align-items:center;gap:12px">
-      <span id="connDot" style="font-size:.8rem;font-weight:600;letter-spacing:.3px;color:var(--muted)">●</span>
+    <div class="top-actions">
+      <span id="connDot" class="conn">●</span>
+      <button class="icon-round" id="notifBtn" type="button" aria-label="Notificaciones" title="Notificaciones">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16.5V11a6 6 0 1 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg><i class="dot"></i>
+      </button>
+      <button class="btn soft sm" data-install hidden>Instalar app</button>
       <button class="btn ghost sm" id="logoutBtn">Salir</button>
     </div>
   </div>
@@ -55,33 +73,37 @@
       <div class="panel-head">
         <h2>Agenda</h2>
         <div class="toolbar">
-          <button class="btn soft sm" id="agRefresh" title="Actualizar">🔄</button>
-          <button class="btn sm" id="agNew">+ Cita rápida</button>
+          <button class="btn soft sm" id="agTomorrow">🌙 Mañana</button>
+          <button class="btn soft sm" id="agBlock">🔒 Bloquear</button>
+          <button class="btn sm" id="agNew">+ Nueva cita</button>
         </div>
       </div>
+      <div class="now-card" id="nowCard"></div>
       <div class="stat-grid" id="agStats"></div>
       <div class="staff-bar" id="staffBar"></div>
-      <div class="cat-legend" id="catLegend"></div>
 
       <div class="cal-toolbar">
-        <div class="view-toggle">
-          <button id="viewCal" class="active">📅 Calendario</button>
-          <button id="viewList">☰ Lista</button>
+        <div class="view-toggle" id="agViews">
+          <button data-span="1">Día</button>
+          <button data-span="3">3 días</button>
+          <button data-span="7">Semana</button>
+          <button data-view="list">Lista</button>
         </div>
         <span class="cal-spacer"></span>
+        <div class="cat-legend" id="catLegend"></div>
       </div>
 
       <!-- Vista calendario -->
       <div id="agCalView">
         <div class="cal-toolbar">
           <div class="cal-nav">
-            <button class="btn soft sm" id="calPrev" aria-label="Semana anterior">‹</button>
+            <button class="btn soft sm" id="calPrev" aria-label="Anterior">‹</button>
             <button class="btn soft sm" id="calToday">Hoy</button>
-            <button class="btn soft sm" id="calNext" aria-label="Semana siguiente">›</button>
+            <button class="btn soft sm" id="calNext" aria-label="Siguiente">›</button>
           </div>
           <span class="cal-title" id="calTitle"></span>
           <span class="cal-spacer"></span>
-          <span class="muted" style="font-size:.8rem">Toca un espacio libre para agendar</span>
+          <span class="muted cal-hint">Toca un espacio libre para agendar · Arrastra una cita para moverla <span class="touch-only">(mantén presionado)</span></span>
         </div>
         <div id="agCal"></div>
       </div>
@@ -291,25 +313,42 @@
 <div class="modal-mask" id="quickMask">
   <div class="modal">
     <div class="m-head">
-      <h3>Cita rápida</h3>
+      <h3 id="qTitle">Nueva cita</h3>
       <button class="x-btn" data-close="quick">&times;</button>
     </div>
     <div class="m-body">
-      <div class="field"><label>Servicio</label>
-        <select class="input" id="qService"></select></div>
-      <div class="field ac-wrap"><label>Nombre de la persona</label>
-        <input class="input" id="qName" type="text" placeholder="Escribe para buscar o registrar" autocomplete="off">
-        <div class="ac-list" id="qAC" style="display:none"></div>
-        <div class="muted" id="qClientInfo" style="font-size:.8rem;margin-top:4px"></div>
+      <div class="seg" id="qMode">
+        <button type="button" data-mode="cita" class="active">Cita</button>
+        <button type="button" data-mode="block">🔒 Bloquear horario</button>
       </div>
-      <div class="two-col">
-        <div class="field"><label>Teléfono <span class="muted">(opcional)</span></label>
-          <input class="input" id="qPhone" type="tel" placeholder="10 dígitos" inputmode="numeric"></div>
-        <div class="field"><label>Atiende</label>
-          <select class="input" id="qStaff"></select></div>
+      <div id="qCitaFields">
+        <div class="field ac-wrap"><label>Nombre de la persona</label>
+          <input class="input" id="qName" type="text" placeholder="Escribe para buscar o registrar" autocomplete="off">
+          <div class="ac-list" id="qAC" style="display:none"></div>
+          <div class="muted" id="qClientInfo" style="font-size:.8rem;margin-top:4px"></div>
+        </div>
+        <div class="two-col">
+          <div class="field"><label>Teléfono <span class="muted">(opcional)</span></label>
+            <input class="input" id="qPhone" type="tel" placeholder="10 dígitos" inputmode="numeric"></div>
+          <div class="field"><label>Atiende</label>
+            <select class="input" id="qStaff"></select></div>
+        </div>
+        <div class="field"><label>Servicios <span class="muted" id="qDurLbl"></span></label>
+          <div class="svc-chips" id="qSvcList"></div>
+          <select class="input" id="qService"></select></div>
+        <div class="field"><label>Nota / diagnóstico <span class="muted">(opcional)</span></label>
+          <textarea class="textarea" id="qNote" placeholder="Ej. uña 3 débil, alergia al acrílico, cliente frecuente..."></textarea></div>
       </div>
-      <div class="field"><label>Nota / diagnóstico <span class="muted">(opcional)</span></label>
-        <textarea class="textarea" id="qNote" placeholder="Ej. uña 3 débil, alergia al acrílico, cliente frecuente..."></textarea></div>
+      <div id="qBlockFields" style="display:none">
+        <div class="field"><label>Motivo</label>
+          <input class="input" id="qBlockNote" type="text" placeholder="Comida, cita médica, día libre…"></div>
+        <div class="field"><label>Duración</label>
+          <select class="input" id="qBlockDur">
+            <option value="30">30 min</option><option value="60">1 hora</option><option value="90">1 h 30 min</option>
+            <option value="120">2 horas</option><option value="180">3 horas</option><option value="240">4 horas</option>
+            <option value="all">Todo el día</option>
+          </select></div>
+      </div>
       <div class="field"><label>Día</label><input class="input" id="qDate" type="date"></div>
       <div class="field"><label>Horario disponible</label>
         <div id="qSlots" class="slots"></div>
@@ -318,6 +357,73 @@
     <div class="m-foot">
       <button class="btn ghost" data-close="quick">Cancelar</button>
       <button class="btn" id="saveQuick">Agendar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====================== MODAL: REPROGRAMAR ====================== -->
+<div class="modal-mask" id="moveMask">
+  <div class="modal">
+    <div class="m-head">
+      <h3>Reprogramar</h3>
+      <button class="x-btn" data-close="move">&times;</button>
+    </div>
+    <div class="m-body">
+      <p id="mvInfo" style="margin:0 0 6px"></p>
+      <div class="field"><label>Nuevo día</label><input class="input" id="mvDate" type="date"></div>
+      <div class="field"><label>Horario disponible</label>
+        <div id="mvSlots" class="slots"></div>
+        <input type="hidden" id="mvTime"></div>
+    </div>
+    <div class="m-foot">
+      <button class="btn ghost" data-close="move">Cancelar</button>
+      <button class="btn" id="saveMove">Guardar cambio</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====================== MODAL: CITAS DE MAÑANA ====================== -->
+<div class="modal-mask" id="tmMask">
+  <div class="modal">
+    <div class="m-head">
+      <h3 id="tmTitle">Mañana</h3>
+      <button class="x-btn" data-close="tm">&times;</button>
+    </div>
+    <div class="m-body" id="tmBody"></div>
+  </div>
+</div>
+
+<!-- ====================== MODAL: NOTIFICACIONES ====================== -->
+<div class="modal-mask" id="ntMask">
+  <div class="modal">
+    <div class="m-head">
+      <h3>Notificaciones</h3>
+      <button class="x-btn" data-close="nt">&times;</button>
+    </div>
+    <div class="m-body">
+      <div class="nt-state" id="ntState"></div>
+      <button class="btn block" id="ntEnable" type="button" style="margin:10px 0 6px">Activar notificaciones</button>
+      <div class="field"><label>Avisarme antes de cada cita</label>
+        <select class="input" id="ntBefore">
+          <option value="5">5 minutos antes</option><option value="10">10 minutos antes</option>
+          <option value="15">15 minutos antes</option><option value="30">30 minutos antes</option>
+          <option value="60">1 hora antes</option>
+        </select></div>
+      <label class="check-row"><input type="checkbox" id="ntNightly"> <span>Resumen de las citas de mañana</span>
+        <select class="input" id="ntHour" style="width:auto;margin-left:auto">
+          <option value="19">7:00 p.m.</option><option value="20">8:00 p.m.</option><option value="21">9:00 p.m.</option>
+          <option value="22">10:00 p.m.</option><option value="23">11:00 p.m.</option>
+        </select></label>
+      <label class="check-row"><input type="checkbox" id="ntNew"> <span>Avisar cuando una clienta agende en la página</span></label>
+      <label class="check-row"><input type="checkbox" id="ntSound"> <span>Sonido</span></label>
+      <p class="muted" style="font-size:.8rem;margin:12px 0 0">
+        Los avisos llegan mientras el panel esté abierto o minimizado en este dispositivo (pestaña del navegador o app instalada).
+        En iPhone primero instala la app (Compartir → Agregar a inicio, iOS 16.4 o más reciente) y actívalos desde ahí.
+      </p>
+    </div>
+    <div class="m-foot">
+      <button class="btn ghost" id="ntTest" type="button">Probar</button>
+      <button class="btn" id="ntSave" type="button">Guardar</button>
     </div>
   </div>
 </div>
@@ -347,7 +453,7 @@
 <div class="modal-mask" id="citaMask">
   <div class="modal">
     <div class="m-head">
-      <h3>Detalle de cita</h3>
+      <h3 id="citaTitle">Detalle de cita</h3>
       <button class="x-btn" data-close="cita">&times;</button>
     </div>
     <div class="m-body" id="citaBody"></div>
@@ -359,34 +465,52 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 <script src="app.js"></script>
 <script src="firebase.js"></script>
 <script src="ticket-pdf.js"></script>
+<script src="notify.js"></script>
+<script src="pwa.js"></script>
 <script>
 Data.init(); // conecta con Firebase (o modo local si no hay internet)
 /* ============================================================
    LOGIN GATE
    ============================================================ */
-const AUTH_KEY = "lume_auth_ok";
-function isAuthed(){ return sessionStorage.getItem(AUTH_KEY) === "1"; }
+// Inicio de sesión con Firebase Authentication (ver Auth en firebase.js).
+let appStarted = false;
+function isAdminUser(user){
+  return !!user && (CONFIG.adminUsers||["lume"]).map(u=> Auth.toEmail(u)).includes((user.email||"").toLowerCase());
+}
 function showApp(){
+  if(appStarted) return;
+  appStarted = true;
   document.getElementById("gate").style.display = "none";
   document.getElementById("shell").style.display = "block";
   initApp();
+  // la pantalla de carga se quita cuando llegan los datos (máx. 7 s)
+  Data.whenReady(7000).then(()=> window.LumeLoader && LumeLoader.done());
 }
-function tryLogin(){
-  const v = document.getElementById("pass").value;
-  if(v === CONFIG.adminPassword){
-    sessionStorage.setItem(AUTH_KEY, "1");
-    showApp();
-  } else {
-    document.getElementById("passErr").style.display = "block";
-  }
+function loginError(msg){
+  const err = document.getElementById("passErr");
+  err.textContent = msg; err.style.display = "block";
 }
-document.getElementById("loginBtn").addEventListener("click", tryLogin);
-document.getElementById("pass").addEventListener("keydown", e=>{ if(e.key==="Enter") tryLogin(); });
-document.getElementById("logoutBtn").addEventListener("click", ()=>{
-  sessionStorage.removeItem(AUTH_KEY); location.href = "index.html";
+async function tryLogin(e){
+  if(e) e.preventDefault();
+  const user = document.getElementById("user").value.trim();
+  const pass = document.getElementById("pass").value;
+  document.getElementById("passErr").style.display = "none";
+  if(!user || !pass){ loginError("Escribe usuario y contraseña."); return; }
+  if(!Auth.available()){ loginError("Sin conexión a Firebase. Revisa tu internet e intenta de nuevo."); return; }
+  const btn = document.getElementById("loginBtn");
+  btn.disabled = true; btn.textContent = "Entrando…";
+  try{ await Auth.signIn(user, pass); }          // si entra, Auth.onChange abre el panel
+  catch(ex){ loginError(Auth.errorText(ex)); }
+  btn.disabled = false; btn.textContent = "Entrar";
+}
+document.getElementById("loginForm").addEventListener("submit", tryLogin);
+document.getElementById("logoutBtn").addEventListener("click", async ()=>{
+  try{ await Auth.signOut(); }catch(e){}
+  location.href = "index.html";
 });
 // NOTA: la comprobación automática de sesión se hace al FINAL del script,
 // cuando todas las variables y funciones ya están definidas (evita el error
@@ -408,6 +532,7 @@ const I = () => Data.get("inventory");
 
 // vuelve a dibujar el panel visible (se llama en cada cambio de Firebase)
 function refreshActivePanel(){
+  if(drag && drag.active){ pendingRefresh = true; return; }   // no interrumpir un arrastre
   const active = document.querySelector(".panel.active");
   if(!active) return;
   const name = active.id.replace("panel-","");
@@ -416,14 +541,50 @@ function refreshActivePanel(){
   else if(name==="reportes") renderReportes();
   else if(name==="inventario") renderInventario();
   else if(name==="clientas") renderClientas();
+  if(document.getElementById("tmMask").classList.contains("open")) renderTomorrow();
+}
+// cada cambio de datos: refrescar pantalla y revisar avisos
+function onDataChange(){
+  refreshActivePanel();
+  Notify.onData();
+  scheduleDerived();
+}
+
+/* ------------------------------------------------------------
+   Datos que mantiene el admin (la página pública ya no puede leer
+   citas ni clientas, solo los horarios ocupados):
+   • "busy": copia mínima de cada cita (fecha, hora, duración).
+   • Clientas: las citas hechas en la página se ligan a su ficha.
+   ------------------------------------------------------------ */
+let derivedReady = false, derivedT = null;
+function scheduleDerived(){
+  if(!derivedReady) return;
+  clearTimeout(derivedT); derivedT = setTimeout(syncDerived, 1200);
+}
+function syncDerived(){
+  if(Data.getMode()!=="firebase") return;
+  const from = addDaysISO(todayISO(), -1);
+  const want = new Map();
+  B().filter(b=> blocksTime(b) && b.date>=from).forEach(b=>{
+    want.set(b.id, { id:b.id, date:b.date, time:b.time, dur:+b.dur||60, staffId:b.staffId||"" });
+  });
+  const have = new Map(Data.get("busy").map(x=> [x.id, x]));
+  want.forEach((w,id)=>{
+    const h = have.get(id);
+    if(!h || h.date!==w.date || h.time!==w.time || +h.dur!==w.dur || (h.staffId||"")!==w.staffId) Data.put("busy", w);
+  });
+  have.forEach((h,id)=>{ if(!want.has(id)) Data.remove("busy", id); });
+
+  // citas de la página sin ficha de clienta → crearla o sumar la visita
+  // (una por vuelta, para no duplicar a la misma clienta si agendó dos veces)
+  const b = B().find(x=> x.source==="web" && !x.clientId && !isBlock(x));
+  if(b){
+    const clientId = upsertClient(b.client.name, b.client.phone, b.client.note);
+    Data.put("bookings", { ...b, clientId });
+  }
 }
 
 function methodPill(m){ return `<span class="pill ${m}">${m.charAt(0).toUpperCase()+m.slice(1)}</span>`; }
-function statusPill(s){
-  const map = { pendiente:["wait","Pendiente"], cobrada:["paid","Cobrada"], cancelada:["cancel","Cancelada"] };
-  const [c,l] = map[s] || ["wait", s];
-  return `<span class="pill ${c}">${l}</span>`;
-}
 
 /* ============================================================
    TABS
@@ -442,7 +603,15 @@ document.querySelectorAll(".tab").forEach(tab=>{
   });
 });
 function goPanel(name){
-  document.querySelector(`.tab[data-panel="${name}"]`).click();
+  const tab = document.querySelector(`.tab[data-panel="${name}"]`);
+  if(tab && !tab.classList.contains("active")) tab.click();
+}
+// enlaces directos: admin.html#caja, #manana (desde notificaciones o accesos de la app)
+function handleHash(hash){
+  const h = (hash||"").replace("#","");
+  if(!h) return;
+  if(h==="manana") openTomorrow();
+  else if(document.querySelector(`.tab[data-panel="${h}"]`)) goPanel(h);
 }
 
 /* cerrar modales */
@@ -463,21 +632,41 @@ function initApp(){
   document.getElementById("agFilterDate").value = "";   // vacío = mostrar todas
   document.getElementById("cajaDate").value = t;
   document.getElementById("repTo").value = t;
-  const from = new Date(); from.setDate(from.getDate()-6);
-  document.getElementById("repFrom").value = from.toISOString().slice(0,10);
+  document.getElementById("repFrom").value = addDaysISO(t, -6);
 
   // listeners de filtros
   document.getElementById("agFilterDate").addEventListener("change", renderList);
   document.getElementById("agAll").addEventListener("click", ()=>{ document.getElementById("agFilterDate").value=""; renderList(); });
-  document.getElementById("agRefresh").addEventListener("click", ()=>{ refreshActivePanel(); toast("Actualizado"); });
   document.getElementById("agNew").addEventListener("click", ()=> openQuickAdd(todayISO(), ""));
+  document.getElementById("agBlock").addEventListener("click", ()=> openQuickAdd(todayISO(), "", { mode:"block" }));
+  document.getElementById("agTomorrow").addEventListener("click", openTomorrow);
   document.getElementById("saveQuick").addEventListener("click", saveQuick);
-  document.getElementById("calPrev").addEventListener("click", ()=>{ agWeekStart=addDaysISO(agWeekStart,-7); renderCalendar(); renderAgStats(); });
-  document.getElementById("calNext").addEventListener("click", ()=>{ agWeekStart=addDaysISO(agWeekStart,7); renderCalendar(); renderAgStats(); });
-  document.getElementById("calToday").addEventListener("click", ()=>{ agWeekStart=weekStartToday(); renderCalendar(); renderAgStats(); });
-  document.getElementById("viewCal").addEventListener("click", ()=> setAgView("cal"));
-  document.getElementById("viewList").addEventListener("click", ()=> setAgView("list"));
+  document.getElementById("calPrev").addEventListener("click", ()=>{ agStart=addDaysISO(agStart,-agSpan); agScrollPending=true; renderAgenda(); });
+  document.getElementById("calNext").addEventListener("click", ()=>{ agStart=addDaysISO(agStart,agSpan); agScrollPending=true; renderAgenda(); });
+  document.getElementById("calToday").addEventListener("click", ()=>{ agStart=spanStart(todayISO()); agScrollPending=true; renderAgenda(); });
+  document.querySelectorAll("#agViews button").forEach(bn=> bn.addEventListener("click", ()=>{
+    if(bn.dataset.view==="list") setAgView("list"); else setSpan(+bn.dataset.span);
+  }));
   fillQuickServices();
+
+  // reprogramar, mañana y notificaciones
+  document.getElementById("mvDate").addEventListener("change", renderMoveSlots);
+  document.getElementById("saveMove").addEventListener("click", saveMove);
+  document.getElementById("notifBtn").addEventListener("click", openNotifSettings);
+  document.getElementById("ntEnable").addEventListener("click", toggleNotif);
+  document.getElementById("ntSave").addEventListener("click", saveNotifSettings);
+  document.getElementById("ntTest").addEventListener("click", async ()=>{
+    if(Notify.permission()==="default"){ await Notify.enable(); renderNotifState(); }
+    Notify.test();
+  });
+  renderNotifState();
+
+  // línea roja de la hora actual y tarjeta "siguiente cita": cada 30 s
+  setInterval(()=>{
+    if(drag && drag.active) return;
+    if(todayISO()!==agToday){ agToday=todayISO(); refreshActivePanel(); return; }   // cambió el día
+    if(document.getElementById("panel-agenda").classList.contains("active")){ updateNow(); renderNowCard(); }
+  }, 30000);
   document.getElementById("cajaDate").addEventListener("change", renderCaja);
   document.getElementById("repFrom").addEventListener("change", renderReportes);
   document.getElementById("repTo").addEventListener("change", renderReportes);
@@ -488,8 +677,7 @@ function initApp(){
   document.getElementById("doCobro").addEventListener("click", doCobro);
 
   // cita rápida: personal, horarios y buscador de clientas
-  document.getElementById("qStaff").innerHTML = (CONFIG.staff||[]).map(s=>`<option value="${s.id}">${s.name}</option>`).join("");
-  document.getElementById("qService").addEventListener("change", ()=> renderQuickSlots());
+  document.getElementById("qStaff").innerHTML = (CONFIG.staff||[]).map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join("");
   document.getElementById("qDate").addEventListener("change", ()=> renderQuickSlots());
   document.getElementById("qStaff").addEventListener("change", ()=> renderQuickSlots());
   document.getElementById("qName").addEventListener("input", renderQuickAC);
@@ -503,14 +691,21 @@ function initApp(){
   buildServiceSelect();
 
   // sincronización en tiempo real con Firebase (o local como respaldo)
-  Data.startSync(refreshActivePanel);
-  renderAgenda();
+  Data.onError((e)=>{
+    const code = (e && (e.code||e.message)) || "";
+    toast(/permission/i.test(code) ? "⚠ No se pudo guardar: sin permiso. Sal y vuelve a entrar." : "⚠ No se pudo guardar en la nube. Revisa tu internet.");
+  });
+  Data.startSync(onDataChange);
+  Data.whenReady(8000).then(()=>{ derivedReady = true; syncDerived(); });
+  setAgView("cal");
+  // avisos: empiezan cuando ya llegó la primera carga (así no avisa de citas viejas)
+  Data.whenReady(8000).then(()=> Notify.start(B));
 
   // indicador de conexión
   const online = Data.getMode()==="firebase";
   const dot = document.getElementById("connDot");
   if(dot){
-    dot.textContent = online ? "● En línea" : "● Sin conexión (local)";
+    dot.innerHTML = `● <span>${online ? "En línea" : "Sin conexión (local)"}</span>`;
     dot.title = online ? "Sincronizado con Firebase en tiempo real" : "No se pudo conectar a Firebase; guardando solo en este dispositivo";
     dot.style.color = online ? "var(--ok)" : "var(--danger)";
   }
@@ -523,15 +718,23 @@ function initApp(){
     toast("✓ Cita agendada correctamente");
     history.replaceState(null,"","admin.html");
   }
+
+  // accesos directos (#caja, #manana) y clics en notificaciones
+  Data.whenReady(8000).then(()=> handleHash(location.hash));
+  window.addEventListener("hashchange", ()=> handleHash(location.hash));
+  if(navigator.serviceWorker) navigator.serviceWorker.addEventListener("message", e=>{
+    if(e.data && e.data.type==="open") handleHash(new URL(e.data.url, location.href).hash);
+  });
 }
 
 /* ============================================================
    AGENDA
    ============================================================ */
-let agShowAll = true;     // en la vista Lista: mostrar todas
-let agView = "cal";       // "cal" | "list"
-const START_H = 8, END_H = 21;
+let agView = "cal";                                  // "cal" | "list"
+let agSpan = window.innerWidth < 760 ? 3 : 7;        // días visibles en el calendario: 1, 3 o 7
+const HPX = 64;                                      // alto de una hora en el calendario (px)
 const DAYS_ES = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
+const DAYS_SHORT = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 
 /* ---- utilidades de fecha (locales, sin desfase de zona horaria) ---- */
 function isoToDate(iso){ return new Date(iso + "T00:00:00"); }
@@ -539,23 +742,40 @@ function dateToISO(d){
   const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), day=String(d.getDate()).padStart(2,"0");
   return `${y}-${m}-${day}`;
 }
-function addDaysISO(iso, n){ const d=isoToDate(iso); d.setDate(d.getDate()+n); return dateToISO(d); }
 function mondayOf(d){ const x=new Date(d); const off=(x.getDay()+6)%7; x.setDate(x.getDate()-off); x.setHours(0,0,0,0); return x; }
 function weekStartToday(){ return dateToISO(mondayOf(new Date())); }
-function slotHour(t){ if(!t) return START_H; let h=parseInt((t.split(":")[0]),10); if(isNaN(h)||h<START_H) h=START_H; if(h>=END_H) h=END_H-1; return h; }
-let agWeekStart = weekStartToday();
+function spanStart(iso){ return agSpan===7 ? dateToISO(mondayOf(isoToDate(iso))) : iso; }
+function dayShort(iso){ const d=isoToDate(iso); return `${DAYS_SHORT[d.getDay()]} ${d.getDate()}`; }
+let agStart = spanStart(todayISO());
+let agScrollPending = true;     // al abrir, llevar el calendario a la hora actual
+let agToday = todayISO();
+
+const isAppt = (b)=> !isBlock(b);
+const canMove = (b)=> isBlock(b) || b.status==="pendiente";
+const byDateTime = (a,b)=> (a.date+a.time).localeCompare(b.date+b.time);
+const endOf = (b)=> b.end || minToHM(hmToMin(b.time)+(+b.dur||60));
 
 function setAgView(v){
   agView = v;
   document.getElementById("agCalView").style.display  = v==="cal"  ? "block" : "none";
   document.getElementById("agListView").style.display = v==="list" ? "block" : "none";
-  document.getElementById("viewCal").classList.toggle("active", v==="cal");
-  document.getElementById("viewList").classList.toggle("active", v==="list");
+  document.querySelectorAll("#agViews button").forEach(bn=>{
+    bn.classList.toggle("active", v==="list" ? bn.dataset.view==="list" : +bn.dataset.span===agSpan);
+  });
   renderAgenda();
+}
+function setSpan(n, anchor){
+  const t = todayISO();
+  const showingToday = t>=agStart && t<addDaysISO(agStart, agSpan);
+  agSpan = n;
+  agStart = spanStart(anchor || (showingToday ? t : agStart));
+  agScrollPending = true;
+  setAgView("cal");
 }
 
 function renderAgenda(){
   renderAgStats();
+  renderNowCard();
   renderStaffBar();
   renderLegend();
   if(agView==="list") renderList(); else renderCalendar();
@@ -564,11 +784,13 @@ function renderAgenda(){
 function initials(name){ return (name||"?").trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join("").toUpperCase() || "?"; }
 function renderStaffBar(){
   const staff = CONFIG.staff || [];
-  document.getElementById("staffBar").innerHTML = staff.map(s=>`
+  const bar = document.getElementById("staffBar");
+  if(staff.length < 2){ bar.innerHTML = ""; return; }   // con una sola persona no hace falta
+  bar.innerHTML = staff.map(s=>`
     <div class="staff-chip">
-      <img class="avatar" src="${s.photo}" alt="${s.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-      <div class="avatar" style="display:none">${initials(s.name)}</div>
-      <div><div class="sn">${s.name}</div><div class="sr">Personal del salón</div></div>
+      <img class="avatar" src="${esc(s.photo)}" alt="${esc(s.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="avatar" style="display:none">${esc(initials(s.name))}</div>
+      <div><div class="sn">${esc(s.name)}</div><div class="sr">Personal del salón</div></div>
     </div>`).join("");
 }
 function renderLegend(){
@@ -579,114 +801,404 @@ function renderLegend(){
 }
 
 function renderAgStats(){
-  const bookings = B();
-  const todays = bookings.filter(b=> b.date === todayISO() && b.status!=="cancelada");
-  const pend = bookings.filter(b=> b.status==="pendiente");
-  const weekDays = []; for(let i=0;i<7;i++) weekDays.push(addDaysISO(agWeekStart,i));
-  const wk = bookings.filter(b=> weekDays.includes(b.date) && b.status!=="cancelada");
+  const all = B().filter(b=> isAppt(b) && blocksTime(b));
+  const t = todayISO(), tm = addDaysISO(t,1);
+  const todays = all.filter(b=> b.date===t);
+  const tomorrow = all.filter(b=> b.date===tm);
+  const toConfirm = all.filter(b=> b.date>=t && b.status==="pendiente" && !b.confirmed);
+  const est = todays.reduce((s,b)=> s+(+b.estTotal||0), 0);
   document.getElementById("agStats").innerHTML = `
     <div class="stat"><div class="k">Citas hoy</div><div class="v">${todays.length}</div></div>
-    <div class="stat"><div class="k">Pendientes</div><div class="v">${pend.length}</div></div>
-    <div class="stat"><div class="k">Esta semana</div><div class="v">${wk.length}</div></div>
-    <div class="stat"><div class="k">Total citas</div><div class="v">${bookings.filter(b=>b.status!=="cancelada").length}</div></div>`;
+    <div class="stat"><div class="k">Mañana</div><div class="v">${tomorrow.length}</div></div>
+    <div class="stat"><div class="k">Por confirmar</div><div class="v">${toConfirm.length}</div></div>
+    <div class="stat"><div class="k">Estimado hoy</div><div class="v sm">${money(est)}</div></div>`;
 }
 
-/* ---------- vista CALENDARIO (bloques por duración) ---------- */
+/* ---- tarjeta "En curso / Siguiente / Mañana" ---- */
+function inLabel(min){
+  if(min < 60) return `en ${min} min`;
+  const h=Math.floor(min/60), m=min%60;
+  return `en ${h} h${m?` ${m} min`:""}`;
+}
+function renderNowCard(){
+  const t = todayISO(), nm = nowMin();
+  const todays = B().filter(b=> b.date===t && isAppt(b) && blocksTime(b)).sort(byDateTime);
+  const cur = todays.find(b=> hmToMin(b.time)<=nm && nm<hmToMin(b.time)+(+b.dur||60));
+  const next = todays.find(b=> hmToMin(b.time)>nm);
+  const tmList = B().filter(b=> b.date===addDaysISO(t,1) && isAppt(b) && blocksTime(b)).sort(byDateTime);
+  let html = "";
+  if(cur){
+    html += `<button class="nc-item live" data-open="${cur.id}">
+      <span class="nc-k"><i class="live-dot"></i>En curso · termina ${fmt12(endOf(cur))}</span>
+      <b>${esc(cur.client.name)}</b><span class="nc-s">${esc(servicesText(cur))}</span></button>`;
+  }
+  if(next){
+    html += `<button class="nc-item" data-open="${next.id}">
+      <span class="nc-k">Siguiente · ${inLabel(hmToMin(next.time)-nm)}</span>
+      <b>${esc(next.client.name)}</b><span class="nc-s">${fmt12(next.time)} · ${esc(servicesText(next))}</span></button>`;
+  } else if(!cur){
+    html += `<div class="nc-item"><span class="nc-k">Hoy</span><b>${todays.length?"Ya terminaste las citas de hoy ✨":"Sin citas hoy"}</b>
+      <span class="nc-s">${todays.length?`${todays.length} cita(s) en el día`:"Toca el calendario para agendar"}</span></div>`;
+  }
+  html += `<button class="nc-item nc-tm" id="ncTomorrow">
+      <span class="nc-k">Mañana</span><b>${tmList.length} ${tmList.length===1?"cita":"citas"}</b>
+      <span class="nc-s">${tmList.length?`Primera ${fmt12(tmList[0].time)} · Enviar recordatorios →`:"Día libre"}</span></button>`;
+  const box = document.getElementById("nowCard");
+  box.innerHTML = html;
+  box.querySelectorAll("[data-open]").forEach(el=> el.onclick = ()=> openCitaDetail(el.dataset.open));
+  document.getElementById("ncTomorrow").onclick = openTomorrow;
+}
+
+/* ---- acomoda en carriles las citas que se enciman ---- */
+function layoutDay(list){
+  const items = list.map(b=>{ const s=hmToMin(b.time); return { b, s, e:s+(+b.dur||60) }; })
+                    .sort((x,y)=> x.s-y.s || y.e-x.e);
+  const out = []; let cluster = [], clusterEnd = -1;
+  const flush = ()=>{
+    const lanes = [];
+    cluster.forEach(it=>{
+      let i = lanes.findIndex(end=> end<=it.s);
+      if(i<0){ i=lanes.length; lanes.push(0); }
+      lanes[i] = it.e; it.lane = i;
+    });
+    cluster.forEach(it=> it.lanes = lanes.length);
+    out.push(...cluster); cluster = [];
+  };
+  items.forEach(it=>{
+    if(cluster.length && it.s>=clusterEnd){ flush(); clusterEnd=-1; }
+    cluster.push(it); clusterEnd = Math.max(clusterEnd, it.e);
+  });
+  if(cluster.length) flush();
+  return out;
+}
+
+/* ---------- vista CALENDARIO (1, 3 o 7 días) ---------- */
 function renderCalendar(){
-  const bookings = B();
-  const days = []; for(let i=0;i<7;i++) days.push(addDaysISO(agWeekStart,i));
+  const all = B();
+  const days = []; for(let i=0;i<agSpan;i++) days.push(addDaysISO(agStart,i));
   const today = todayISO();
-  const OPEN=CONFIG.openHour, CLOSE=CONFIG.closeHour, HPX=60;
+  const OPEN=CONFIG.openHour, CLOSE=CONFIG.closeHour;
   const totalH=(CLOSE-OPEN)*HPX;
+  const grid = `56px repeat(${agSpan}, minmax(0,1fr))`;
 
-  const d0=isoToDate(days[0]), d6=isoToDate(days[6]);
-  document.getElementById("calTitle").textContent =
-    `${d0.toLocaleDateString("es-MX",{day:"numeric",month:"short"})} – ${d6.toLocaleDateString("es-MX",{day:"numeric",month:"short",year:"numeric"})}`;
+  const d0=isoToDate(days[0]), dN=isoToDate(days[days.length-1]);
+  document.getElementById("calTitle").textContent = agSpan===1
+    ? d0.toLocaleDateString("es-MX",{weekday:"long",day:"numeric",month:"long"})
+    : `${d0.toLocaleDateString("es-MX",{day:"numeric",month:"short"})} – ${dN.toLocaleDateString("es-MX",{day:"numeric",month:"short",year:"numeric"})}`;
 
-  // encabezado de días
-  let head = '<div class="wk-head"><div class="wk-corner"></div>';
-  days.forEach((iso,i)=>{ const dt=isoToDate(iso); head += `<div class="wk-dh ${iso===today?"today":""}"><span class="dn">${DAYS_ES[i]}</span><span class="dd">${dt.getDate()}</span></div>`; });
+  // encabezado de días (toca un día para verlo solo)
+  let head = `<div class="wk-head" style="grid-template-columns:${grid}"><div class="wk-corner"></div>`;
+  days.forEach(iso=>{
+    const dt=isoToDate(iso);
+    const n = all.filter(b=> b.date===iso && isAppt(b) && blocksTime(b)).length;
+    head += `<button type="button" class="wk-dh ${iso===today?"today":""} ${iso<today?"past":""}" data-day="${iso}" title="Ver solo este día">
+      <span class="dn">${DAYS_SHORT[dt.getDay()]}</span><span class="dd">${dt.getDate()}</span>
+      <span class="dc">${n?`${n} cita${n>1?"s":""}`:"&nbsp;"}</span></button>`;
+  });
   head += '</div>';
 
-  // columna de horas
+  // columna de horas en formato 12 h
   let gutter = `<div class="wk-gutter" style="height:${totalH}px">`;
-  for(let h=OPEN; h<=CLOSE; h++){ gutter += `<div class="hl" style="top:${(h-OPEN)*HPX}px">${h}:00</div>`; }
-  gutter += '</div>';
+  for(let h=OPEN; h<CLOSE; h++){ gutter += `<div class="hl" style="top:${(h-OPEN)*HPX}px">${fmtHour12(h)}</div>`; }
+  gutter += `<div class="now-tag" id="nowTag" hidden></div></div>`;
 
-  // columnas de días con celdas + bloques de citas
+  // columnas de días con bloques de citas
   let cols = '';
   days.forEach(iso=>{
-    let cells = '';
-    for(let h=OPEN; h<CLOSE; h++){ cells += `<div class="hcell" style="height:${HPX}px" data-slot-date="${iso}" data-slot-time="${String(h).padStart(2,"0")}:00"></div>`; }
     let blocks = '';
-    bookings.filter(b=> b.date===iso).forEach(b=>{
-      const start=hmToMin(b.time), dur=(+b.dur||60);
-      const top=Math.max(0,(start-OPEN*60)/60*HPX), ht=Math.max(dur/60*HPX, 22);
+    layoutDay(all.filter(b=> b.date===iso && blocksTime(b))).forEach(({b, s, lane, lanes})=>{
+      const dur=(+b.dur||60);
+      const top=Math.max(0,(s-OPEN*60)/60*HPX), ht=Math.max(dur/60*HPX-2, 20);
+      const pos = `top:${top}px;height:${ht}px;left:calc(${lane*100/lanes}% + 2px);width:calc(${100/lanes}% - 4px)`;
+      const past = (iso<today || (iso===today && s+dur<=nowMin())) ? "past" : "";
+      if(isBlock(b)){
+        blocks += `<div class="cita-block lock movable ${past} ${ht<40?"tiny":""}" data-cita="${b.id}" tabindex="0" role="button" style="${pos}"
+            title="Bloqueado · ${fmtRange12(b.time,endOf(b))}">
+          <span class="t">🔒 ${fmtRange12(b.time,endOf(b))}</span><span class="n">${esc(b.note||"Horario bloqueado")}</span></div>`;
+        return;
+      }
       const col=catColor((b.items&&b.items[0])?b.items[0].cat:"");
       const svc=(b.items&&b.items.length)?b.items[0].name+(b.items.length>1?` +${b.items.length-1}`:""):"";
-      blocks += `<div class="cita-block ${b.status}" data-cita="${b.id}" style="top:${top}px;height:${ht}px;background:${col.bg};color:${col.tx};border-left-color:${col.bd}">
-        <span class="t">${b.time||""}${b.end?"–"+b.end:""}</span>
-        <span class="n">${b.client.name}</span>
-        <span class="n" style="opacity:.8">${svc}</span></div>`;
+      blocks += `<div class="cita-block ${b.status} ${b.confirmed?"confirmed":""} ${canMove(b)?"movable":""} ${past} ${ht<40?"tiny":""}"
+          data-cita="${b.id}" tabindex="0" role="button" style="${pos};background:${col.bg};color:${col.tx};border-left-color:${col.bd}"
+          title="${esc(b.client.name)} · ${fmtRange12(b.time,endOf(b))}${svc?" · "+esc(svc):""}">
+        <span class="t">${fmtRange12(b.time,endOf(b))}${b.confirmed?' <span class="ck" title="Confirmada">✓</span>':""}${b.status==="cobrada"?' <span class="ck" title="Cobrada">$</span>':""}</span>
+        <span class="n nm">${esc(b.client.name)}</span>
+        <span class="n sv">${esc(svc)}</span></div>`;
     });
-    cols += `<div class="wk-col ${iso===today?"today":""}" style="height:${totalH}px">${cells}${blocks}</div>`;
+    const nowLine = iso===today ? `<div class="now-line" id="nowLine" hidden><i></i></div>` : "";
+    cols += `<div class="wk-col ${iso===today?"today":""} ${isClosedDay(iso)?"closed":""}" data-date="${iso}" style="height:${totalH}px;--hpx:${HPX}px">${blocks}${nowLine}</div>`;
   });
 
   document.getElementById("agCal").innerHTML =
-    `<div class="cal-wrap"><div style="min-width:840px">${head}<div class="wk-body">${gutter}${cols}</div></div></div>`;
+    `<div class="cal-wrap" id="calWrap"><div class="cal-inner ${agSpan===7?"wide":""}">${head}<div class="wk-body" style="grid-template-columns:${grid}">${gutter}${cols}</div></div></div>`;
 
-  document.querySelectorAll("#agCal [data-cita]").forEach(el=> el.addEventListener("click",(e)=>{ e.stopPropagation(); openCitaDetail(el.dataset.cita); }));
-  document.querySelectorAll("#agCal .hcell").forEach(td=> td.addEventListener("click", ()=> openQuickAdd(td.dataset.slotDate, td.dataset.slotTime)));
+  const cal = document.getElementById("agCal");
+  cal.querySelectorAll("[data-cita]").forEach(el=>{
+    el.addEventListener("pointerdown", onBlockDown);
+    el.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openCitaDetail(el.dataset.cita); } });
+    el.addEventListener("contextmenu", e=> e.preventDefault());
+  });
+  cal.querySelectorAll(".wk-col").forEach(col=>{
+    col.addEventListener("click", e=> onColumnClick(e, col));
+    col.addEventListener("pointermove", e=> onColumnHover(e, col));
+    col.addEventListener("pointerleave", hideHoverSlot);
+  });
+  cal.querySelectorAll("[data-day]").forEach(h=> h.addEventListener("click", ()=>{
+    if(agSpan===1) setSpan(window.innerWidth<760?3:7, h.dataset.day); else setSpan(1, h.dataset.day);
+  }));
+
+  updateNow();
+  if(agScrollPending){ agScrollPending=false; scrollCalToFocus(days); }
+}
+
+/* lleva el calendario a la hora actual (o a la primera cita visible) */
+function scrollCalToFocus(days){
+  const wrap = document.getElementById("calWrap"); if(!wrap) return;
+  const OPEN = CONFIG.openHour*60;
+  let m = null;
+  if(days.includes(todayISO())) m = nowMin() - 60;
+  else {
+    const first = B().filter(b=> days.includes(b.date) && blocksTime(b)).map(b=> hmToMin(b.time)).sort((a,b)=>a-b)[0];
+    if(first!=null) m = first - 30;
+  }
+  wrap.scrollTop = m==null ? 0 : Math.max(0, (m-OPEN)/60*HPX);
+}
+
+/* ---- línea roja de la hora actual ---- */
+function updateNow(){
+  const line = document.getElementById("nowLine"), tag = document.getElementById("nowTag");
+  const nm = nowMin(), OPEN = CONFIG.openHour*60, CLOSE = CONFIG.closeHour*60;
+  const inRange = nm>=OPEN && nm<=CLOSE;
+  const top = (nm-OPEN)/60*HPX;
+  if(line){ line.hidden = !inRange; line.style.top = top+"px"; }
+  if(tag){
+    tag.hidden = !(inRange && line);
+    tag.style.top = top+"px";
+    tag.textContent = fmt12(minToHM(nm)).replace(" ", " ");
+  }
+}
+
+/* ---- tocar un espacio libre = nueva cita a esa hora ---- */
+let justDragged = 0;
+function slotFromY(col, clientY){
+  const r = col.getBoundingClientRect(), step = CONFIG.slotStep||15;
+  const m = CONFIG.openHour*60 + Math.floor((clientY-r.top)/HPX*60/step)*step;
+  return Math.max(CONFIG.openHour*60, Math.min(CONFIG.closeHour*60-step, m));
+}
+function onColumnClick(e, col){
+  if(e.target.closest(".cita-block") || Date.now()-justDragged < 450) return;
+  openQuickAdd(col.dataset.date, minToHM(slotFromY(col, e.clientY)));
+}
+let hoverEl = null;
+function onColumnHover(e, col){
+  if(e.pointerType!=="mouse" || drag || e.target.closest(".cita-block")){ hideHoverSlot(); return; }
+  if(!hoverEl){ hoverEl = document.createElement("div"); hoverEl.className = "hover-slot"; }
+  const m = slotFromY(col, e.clientY), step = CONFIG.slotStep||15;
+  if(hoverEl.parentNode!==col) col.appendChild(hoverEl);
+  hoverEl.style.top = ((m-CONFIG.openHour*60)/60*HPX)+"px";
+  hoverEl.style.height = (step/60*HPX)+"px";
+  hoverEl.textContent = "+ " + fmt12(minToHM(m));
+}
+function hideHoverSlot(){ if(hoverEl && hoverEl.parentNode) hoverEl.parentNode.removeChild(hoverEl); }
+
+/* ============================================================
+   ARRASTRAR Y SOLTAR CITAS (mouse y pantalla táctil)
+   • Mouse: arrastra directamente.
+   • Celular: mantén presionada la cita ~⅓ s y luego arrástrala.
+   ============================================================ */
+let drag = null, pendingRefresh = false;
+
+function onBlockDown(e){
+  if(e.button) return;
+  const el = e.currentTarget, b = B().find(x=> x.id===el.dataset.cita);
+  if(!b) return;
+  const r = el.getBoundingClientRect();
+  drag = { el, b, x:e.clientX, y:e.clientY, lastX:e.clientX, lastY:e.clientY,
+           grabX:e.clientX-r.left, grabY:e.clientY-r.top,
+           touch:e.pointerType!=="mouse", active:false, target:null, timer:null };
+  if(canMove(b) && drag.touch){
+    drag.timer = setTimeout(()=>{ if(drag && !drag.active) activateDrag(); }, 330);
+  }
+  window.addEventListener("pointermove", onDragPointerMove);
+  window.addEventListener("pointerup", onDragPointerUp);
+  window.addEventListener("pointercancel", onDragPointerCancel);
+}
+function onDragPointerMove(e){
+  if(!drag) return;
+  if(!drag.active){
+    if(Math.hypot(e.clientX-drag.x, e.clientY-drag.y) < 6) return;
+    // en celular, mover antes de mantener presionado = desplazar la pantalla
+    if(drag.touch || !canMove(drag.b)){ endDrag(); return; }
+    activateDrag();
+  }
+  e.preventDefault();
+  dragMoveTo(e.clientX, e.clientY);
+}
+function onDragPointerUp(){
+  if(!drag) return;
+  if(drag.active){ finishDrag(); return; }
+  const id = drag.b.id;
+  endDrag();
+  openCitaDetail(id);       // fue un toque/click normal
+}
+function onDragPointerCancel(){
+  // en algunos celulares el navegador cancela el puntero: seguimos con los eventos táctiles
+  if(drag && drag.active && drag.touch) return;
+  endDrag();
+}
+document.addEventListener("touchmove", e=>{
+  if(!drag || !drag.active) return;
+  e.preventDefault();                       // evita que la pantalla se desplace mientras arrastras
+  const t = e.touches[0]; if(t) dragMoveTo(t.clientX, t.clientY);
+}, { passive:false });
+document.addEventListener("touchend", ()=>{ if(drag && drag.active && drag.touch) finishDrag(); });
+
+function activateDrag(){
+  clearTimeout(drag.timer);
+  drag.active = true;
+  if(navigator.vibrate) try{ navigator.vibrate(15); }catch(e){}
+  hideHoverSlot();
+  const r = drag.el.getBoundingClientRect();
+  const g = drag.el.cloneNode(true);
+  g.className += " drag-ghost";
+  g.removeAttribute("data-cita");
+  Object.assign(g.style, { width:r.width+"px", height:r.height+"px", left:r.left+"px", top:r.top+"px" });
+  document.body.appendChild(g);
+  drag.ghost = g;
+  drag.hint = document.createElement("div");
+  drag.hint.className = "drop-hint";
+  drag.el.classList.add("drag-src");
+  document.body.classList.add("dragging");
+  dragMoveTo(drag.lastX, drag.lastY);
+  const loop = ()=>{ if(!drag || !drag.active) return; if(autoScroll(drag.lastX, drag.lastY)) updateDropTarget(drag.lastX, drag.lastY); requestAnimationFrame(loop); };
+  requestAnimationFrame(loop);
+}
+function dragMoveTo(x, y){
+  drag.lastX = x; drag.lastY = y;
+  drag.ghost.style.left = (x-drag.grabX)+"px";
+  drag.ghost.style.top = (y-drag.grabY)+"px";
+  updateDropTarget(x, y);
+}
+function updateDropTarget(x, y){
+  const cols = [...document.querySelectorAll("#agCal .wk-col")];
+  if(!cols.length) return;
+  let col = cols.find(c=>{ const r=c.getBoundingClientRect(); return x>=r.left && x<r.right; });
+  if(!col) col = x < cols[0].getBoundingClientRect().left ? cols[0] : cols[cols.length-1];
+  const r = col.getBoundingClientRect(), step = CONFIG.slotStep||15;
+  const OPEN = CONFIG.openHour*60, CLOSE = CONFIG.closeHour*60;
+  const dur = Math.min(+drag.b.dur||60, CLOSE-OPEN);
+  let m = OPEN + ((y-drag.grabY)-r.top)/HPX*60;
+  m = Math.round(m/step)*step;
+  m = Math.max(OPEN, Math.min(CLOSE-dur, m));
+  const date = col.dataset.date, time = minToHM(m);
+  const clash = hasClash(B(), date, time, drag.b.dur, drag.b.staffId, drag.b.id);
+  drag.target = { date, time, clash };
+  if(drag.hint.parentNode!==col) col.appendChild(drag.hint);
+  drag.hint.style.top = ((m-OPEN)/60*HPX)+"px";
+  drag.hint.style.height = Math.max(dur/60*HPX-2, 20)+"px";
+  drag.hint.classList.toggle("bad", clash);
+  drag.hint.innerHTML = `<span>${clash?"Ocupado · ":""}${dayShort(date)} · ${fmtRange12(time, minToHM(m+(+drag.b.dur||60)))}</span>`;
+}
+// desplaza el calendario cuando arrastras cerca de la orilla
+function autoScroll(x, y){
+  const wrap = document.getElementById("calWrap"); if(!wrap) return false;
+  const r = wrap.getBoundingClientRect(), edge = 44, sp = 14;
+  let dx = 0, dy = 0;
+  if(y < r.top+edge) dy = -sp; else if(y > r.bottom-edge) dy = sp;
+  if(x < r.left+edge+56) dx = -sp; else if(x > r.right-edge) dx = sp;
+  const top0 = wrap.scrollTop, left0 = wrap.scrollLeft;
+  wrap.scrollTop += dy; wrap.scrollLeft += dx;
+  return wrap.scrollTop!==top0 || wrap.scrollLeft!==left0;
+}
+function finishDrag(){
+  const d = drag;
+  justDragged = Date.now();
+  endDrag();
+  const t = d.target;
+  if(!t) return;
+  if(t.date===d.b.date && t.time===d.b.time) return;
+  if(t.clash){ toast("Ese horario ya está ocupado"); return; }
+  moveBooking(d.b, t.date, t.time);
+}
+function endDrag(){
+  if(!drag) return;
+  clearTimeout(drag.timer);
+  if(drag.ghost) drag.ghost.remove();
+  if(drag.hint) drag.hint.remove();
+  if(drag.el) drag.el.classList.remove("drag-src");
+  document.body.classList.remove("dragging");
+  window.removeEventListener("pointermove", onDragPointerMove);
+  window.removeEventListener("pointerup", onDragPointerUp);
+  window.removeEventListener("pointercancel", onDragPointerCancel);
+  drag = null;
+  if(pendingRefresh){ pendingRefresh = false; refreshActivePanel(); }
+}
+
+/* cambia una cita de día/hora (con opción de deshacer y avisar a la clienta) */
+function moveBooking(b, date, time){
+  const before = { ...b };
+  const at = new Date().toISOString();
+  const upd = { ...b, date, time, end:minToHM(hmToMin(time)+(+b.dur||60)), movedAt:at,
+    history:[...(b.history||[]), { at, from:`${b.date} ${b.time}`, to:`${date} ${time}` }].slice(-10) };
+  Data.put("bookings", upd);
+  const acts = [{ label:"Deshacer", fn:()=>{ Data.put("bookings", before); toast("Cambio deshecho"); } }];
+  if(!isBlock(b) && b.client.phone){
+    acts.push({ label:"Avisar por WhatsApp", fn:()=> window.open(waLink(b.client.phone, rescheduleText(upd)), "_blank") });
+  }
+  actionToast(`${isBlock(b)?"Bloqueo movido":"Cita movida"} a ${dayLabel(date)} · ${fmt12(time)}`, acts);
 }
 
 /* ---------- vista LISTA ---------- */
 function renderList(){
-  const bookings = B().slice().sort((a,b)=> (a.date+a.time).localeCompare(b.date+b.time));
   const filterDate = document.getElementById("agFilterDate").value;
   const filtering = !!filterDate;
-  const list = filtering ? bookings.filter(b=> b.date === filterDate) : bookings;
+  const all = B().filter(isAppt).sort(byDateTime);
+  const list = filtering ? all.filter(b=> b.date === filterDate) : all;
+  const box = document.getElementById("agListBody");
 
   if(!list.length){
-    document.getElementById("agListBody").innerHTML =
-      `<div class="empty-state"><div class="big">📅</div>No hay citas ${filtering?"para este día":"registradas"}.</div>`;
+    box.innerHTML = `<div class="empty-state"><div class="big">📅</div>No hay citas ${filtering?"para este día":"registradas"}.</div>`;
     return;
   }
-  document.getElementById("agListBody").innerHTML = `
+  box.innerHTML = `
     <div class="tbl-wrap"><table class="tbl">
       <thead><tr><th>Día / Hora</th><th>Cliente</th><th>Servicios</th><th class="right">Estimado</th><th>Estado</th><th class="right">Acciones</th></tr></thead>
       <tbody>
       ${list.map(b=>`
-        <tr>
-          <td><strong>${fmtDate(b.date)}</strong><br><span class="muted">${b.time||""}</span></td>
-          <td>${b.client.name}<br>
-              <a class="muted" href="${waLink(b.client.phone,'Hola '+b.client.name+', te escribo de '+CONFIG.businessName)}" target="_blank" style="font-size:.82rem;text-decoration:none">📱 ${b.client.phone||""}</a>
-              ${b.client.note?`<div class="muted" style="font-size:.8rem;margin-top:2px">📝 ${b.client.note}</div>`:""}</td>
-          <td>${b.items.map(i=>`${i.qty}× ${i.name}`).join("<br>")}</td>
+        <tr class="${blocksTime(b)?"":"row-off"}">
+          <td><strong>${fmtDate(b.date)}</strong><br><span class="muted">${fmtRange12(b.time, endOf(b))}</span></td>
+          <td>${esc(b.client.name)}<br>
+              ${b.client.phone?`<a class="muted" href="${waLink(b.client.phone,'Hola '+b.client.name+', te escribo de '+CONFIG.businessName)}" target="_blank" rel="noopener" style="font-size:.82rem;text-decoration:none">📱 ${esc(b.client.phone)}</a>`:""}
+              ${b.client.note?`<div class="muted" style="font-size:.8rem;margin-top:2px">📝 ${esc(b.client.note)}</div>`:""}</td>
+          <td>${(b.items||[]).map(i=>`${i.qty}× ${esc(i.name)}`).join("<br>")}</td>
           <td class="right">${money(b.estTotal)}</td>
-          <td>${statusPill(b.status)}</td>
+          <td>${statusPill(b.status, b)}</td>
           <td><div class="row-actions">
-            ${b.status==="pendiente"?`<button class="btn sm" data-cobrar="${b.id}">Cobrar</button>`:""}
-            ${b.status==="pendiente"?`<button class="btn ghost sm" data-cancelar="${b.id}">Cancelar</button>`:""}
-            <button class="btn danger sm" data-delbook="${b.id}">Eliminar</button>
+            ${b.status==="pendiente"?`<button class="btn sm" data-la="cobrar" data-id="${b.id}">Cobrar</button>`:""}
+            ${b.status==="pendiente"&&b.client.phone?`<button class="btn soft sm" data-la="remind" data-id="${b.id}" title="Enviar recordatorio por WhatsApp">💬</button>`:""}
+            <button class="btn ghost sm" data-la="open" data-id="${b.id}">Ver</button>
           </div></td>
         </tr>`).join("")}
       </tbody>
     </table></div>`;
 
-  document.querySelectorAll("[data-cobrar]").forEach(el=> el.onclick = ()=> openCobro(el.dataset.cobrar));
-  document.querySelectorAll("[data-cancelar]").forEach(el=> el.onclick = ()=>{
-    const bk = B().find(x=>x.id===el.dataset.cancelar);
-    if(bk){ Data.put("bookings", { ...bk, status:"cancelada" }); toast("Cita cancelada"); }
-  });
-  document.querySelectorAll("[data-delbook]").forEach(el=> el.onclick = ()=>{
-    Data.remove("bookings", el.dataset.delbook); toast("Cita eliminada");
+  box.querySelectorAll("[data-la]").forEach(el=> el.onclick = ()=>{
+    const id = el.dataset.id;
+    if(el.dataset.la==="cobrar") openCobro(id);
+    else if(el.dataset.la==="remind") sendReminder(id);
+    else openCitaDetail(id);
   });
 }
 
-/* ---------- CITA RÁPIDA ---------- */
+/* ---------- NUEVA CITA / BLOQUEO ---------- */
+let qMode = "cita";           // "cita" | "block"
+let qItems = [];              // ids de servicios elegidos
+let qPreferred = "";          // hora tocada en el calendario (se respeta al agregar servicios)
+
 function fillQuickServices(){
   const sel = document.getElementById("qService");
-  sel.innerHTML = "";
+  sel.innerHTML = `<option value="">+ Agregar servicio…</option>`;
   SERVICES.forEach(g=>{
     const og=document.createElement("optgroup"); og.label=g.cat;
     g.items.forEach(it=>{
@@ -695,47 +1207,102 @@ function fillQuickServices(){
     });
     sel.appendChild(og);
   });
+  sel.addEventListener("change", ()=>{
+    if(sel.value){ qItems.push(sel.value); sel.value=""; renderQuickItems(); renderQuickSlots(); }
+  });
+  document.getElementById("qSvcList").addEventListener("click", e=>{
+    const x = e.target.closest("[data-qdel]"); if(!x) return;
+    qItems.splice(+x.dataset.qdel, 1); renderQuickItems(); renderQuickSlots();
+  });
+  document.querySelectorAll("#qMode button").forEach(bn=> bn.addEventListener("click", ()=> setQuickMode(bn.dataset.mode)));
+  document.getElementById("qBlockDur").addEventListener("change", ()=> renderQuickSlots());
 }
-function openQuickAdd(date, time){
-  document.getElementById("qName").value = "";
-  document.getElementById("qPhone").value = "";
-  document.getElementById("qNote").value = "";
+function qDur(){
+  if(qMode==="block"){
+    const v = document.getElementById("qBlockDur").value;
+    return v==="all" ? (CONFIG.closeHour-CONFIG.openHour)*60 : +v;
+  }
+  return qItems.reduce((s,id)=> s+(SERVICE_INDEX[id]?SERVICE_INDEX[id].dur:0), 0);
+}
+function renderQuickItems(){
+  const box = document.getElementById("qSvcList");
+  box.innerHTML = qItems.length ? qItems.map((id,i)=>{
+    const it = SERVICE_INDEX[id], c = it.color;
+    return `<span class="svc-chip" style="background:${c.bg};border-color:${c.bd};color:${c.tx}">${esc(it.name)} · ${durLabel(it.dur)}
+      <button type="button" data-qdel="${i}" aria-label="Quitar">&times;</button></span>`;
+  }).join("") : `<span class="muted" style="font-size:.85rem">Agrega uno o más servicios.</span>`;
+  const est = qItems.reduce((s,id)=> s+SERVICE_INDEX[id].min, 0);
+  document.getElementById("qDurLbl").textContent = qItems.length ? `· ${durLabel(qDur())} · ${money(est)}` : "";
+}
+function setQuickMode(m){
+  qMode = m;
+  document.querySelectorAll("#qMode button").forEach(bn=> bn.classList.toggle("active", bn.dataset.mode===m));
+  document.getElementById("qCitaFields").style.display = m==="cita" ? "block" : "none";
+  document.getElementById("qBlockFields").style.display = m==="block" ? "block" : "none";
+  document.getElementById("qTitle").textContent = m==="cita" ? "Nueva cita" : "Bloquear horario";
+  document.getElementById("saveQuick").textContent = m==="cita" ? "Agendar" : "Bloquear";
+  if(m==="block") document.getElementById("qDurLbl").textContent = ""; else renderQuickItems();
+  renderQuickSlots();
+}
+function openQuickAdd(date, time, opts){
+  opts = opts || {};
+  qItems = [];
+  qPreferred = time || "";
+  document.getElementById("qName").value = opts.name || "";
+  document.getElementById("qPhone").value = opts.phone || "";
+  document.getElementById("qNote").value = opts.note || "";
+  document.getElementById("qBlockNote").value = "";
+  document.getElementById("qBlockDur").value = "60";
   document.getElementById("qClientInfo").textContent = "";
   document.getElementById("qDate").value = date || todayISO();
   document.getElementById("qDate").min = todayISO();
   document.getElementById("qTime").value = time || "";
   document.getElementById("qAC").style.display = "none";
+  renderQuickItems();
+  setQuickMode(opts.mode || "cita");
   renderQuickSlots(time);
   openModal("quick");
-  setTimeout(()=> document.getElementById("qName").focus(), 100);
+  if(qMode==="cita" && !opts.name) setTimeout(()=> document.getElementById("qName").focus(), 120);
 }
 function renderQuickSlots(preselect){
+  preselect = preselect || (!document.getElementById("qTime").value && qPreferred) || "";
   const box = document.getElementById("qSlots"), qTime = document.getElementById("qTime");
-  const it = SERVICE_INDEX[document.getElementById("qService").value];
   const date = document.getElementById("qDate").value;
   const staffId = document.getElementById("qStaff").value;
-  if(!it || !date){ box.innerHTML = '<div class="muted" style="font-size:.85rem">Elige servicio y día.</div>'; qTime.value=""; return; }
-  const slots = availableSlots(B(), date, it.dur, staffId);
+  const dur = qDur();
+  if(!dur || !date){
+    box.innerHTML = `<div class="muted" style="font-size:.85rem">${qMode==="cita"?"Agrega un servicio y elige el día.":"Elige el día."}</div>`;
+    return;
+  }
+  const slots = availableSlots(B(), date, dur, staffId);
   if(preselect && slots.includes(preselect)) qTime.value = preselect;
   if(qTime.value && !slots.includes(qTime.value)) qTime.value = "";
   if(!slots.length){ box.innerHTML = '<div class="muted" style="font-size:.85rem">No hay horarios disponibles ese día.</div>'; return; }
-  box.innerHTML = slots.map(t=>`<button type="button" class="slot-btn${qTime.value===t?" active":""}" data-qslot="${t}">${t}</button>`).join("");
+  if(!qTime.value && preselect){
+    // el espacio tocado no alcanza: sugerimos el más cercano
+    const p = hmToMin(preselect);
+    qTime.value = slots.slice().sort((a,b)=> Math.abs(hmToMin(a)-p)-Math.abs(hmToMin(b)-p))[0];
+  }
+  box.innerHTML = slotGroupsHTML(slots, qTime.value, "qslot");
   box.querySelectorAll("[data-qslot]").forEach(bn=> bn.onclick=()=>{
-    qTime.value = bn.dataset.qslot;
+    qTime.value = bn.dataset.qslot; qPreferred = qTime.value;
     box.querySelectorAll(".slot-btn").forEach(x=>x.classList.remove("active"));
     bn.classList.add("active");
   });
+  const act = box.querySelector(".slot-btn.active");
+  if(act) act.scrollIntoView({ block:"nearest" });
 }
 function renderQuickAC(){
   const term = document.getElementById("qName").value.trim().toLowerCase();
   const ac = document.getElementById("qAC");
   document.getElementById("qClientInfo").textContent = "";
   if(term.length < 1){ ac.style.display="none"; return; }
-  const matches = Data.get("clients").filter(c=> (c.name||"").toLowerCase().includes(term)).slice(0,6);
+  const digits = term.replace(/\D/g,"");
+  const matches = Data.get("clients").filter(c=> (c.name||"").toLowerCase().includes(term) || (digits.length>2 && normalizePhone(c.phone).includes(digits))).slice(0,6);
   if(!matches.length){ ac.style.display="none"; return; }
   ac.innerHTML = matches.map(c=>`<div class="ac-item" data-cid="${c.id}">
-      <div class="acn">${c.name}</div>
-      <div class="acm">${c.phone||"sin teléfono"} · ${(+c.visits||0)} visita(s)${c.note?" · 📝 nota":""}</div></div>`).join("");
+      <div class="acn">${esc(c.name)}</div>
+      <div class="acm">${esc(c.phone||"sin teléfono")} · ${(+c.visits||0)} visita(s)${c.note?" · 📝 nota":""}</div></div>`).join("");
   ac.style.display = "block";
   ac.querySelectorAll("[data-cid]").forEach(el=> el.addEventListener("mousedown", (e)=>{ e.preventDefault(); pickClient(el.dataset.cid); }));
 }
@@ -748,68 +1315,272 @@ function pickClient(id){
   document.getElementById("qAC").style.display = "none";
 }
 function saveQuick(){
-  const it = SERVICE_INDEX[document.getElementById("qService").value];
-  const name = document.getElementById("qName").value.trim();
-  const phone = document.getElementById("qPhone").value.trim();
-  const note = document.getElementById("qNote").value.trim();
   const date = document.getElementById("qDate").value;
   const time = document.getElementById("qTime").value;
   const staffId = document.getElementById("qStaff").value;
   const st = staffById(staffId);
-  if(!it){ toast("Elige un servicio."); return; }
-  if(name.length < 2){ toast("Escribe el nombre."); return; }
+  const dur = qDur();
   if(!date){ toast("Elige el día."); return; }
   if(!time){ toast("Elige un horario disponible."); return; }
-  const dur = it.dur;
+  if(hasClash(B(), date, time, dur, staffId)){ toast("Ese horario se acaba de ocupar. Elige otro."); renderQuickSlots(); return; }
+
+  if(qMode==="block"){
+    const note = document.getElementById("qBlockNote").value.trim() || "Horario bloqueado";
+    const id = uid();
+    Notify.ignore(id);
+    Data.put("bookings", {
+      id, type:"block", createdAt:new Date().toISOString(),
+      date, time, dur, end:minToHM(hmToMin(time)+dur), note,
+      client:{ name:note, phone:"", note:"" }, items:[], estTotal:0,
+      staffId, staffName: st ? st.name : "", status:"bloqueo"
+    });
+    closeModal("quick"); toast("🔒 Horario bloqueado");
+    return;
+  }
+
+  const name = document.getElementById("qName").value.trim();
+  const phone = document.getElementById("qPhone").value.trim();
+  const note = document.getElementById("qNote").value.trim();
+  if(name.length < 2){ toast("Escribe el nombre."); return; }
+  if(!qItems.length){ toast("Agrega al menos un servicio."); return; }
+  const counts = {};
+  qItems.forEach(id=> counts[id] = (counts[id]||0)+1);
+  const items = Object.keys(counts).map(id=>{
+    const it = SERVICE_INDEX[id];
+    return { id, name:it.name, qty:counts[id], min:it.min, max:it.max, cat:it.cat, dur:it.dur };
+  });
   const clientId = upsertClient(name, phone, note);
   const booking = {
-    id: uid(), createdAt: new Date().toISOString(),
+    id: uid(), createdAt: new Date().toISOString(), source:"admin",
     date, time, dur, end: minToHM(hmToMin(time)+dur),
     client: { name, phone, note }, clientId,
     staffId, staffName: st ? st.name : "",
-    items: [{ id:it.id, name:it.name, qty:1, min:it.min, max:it.max, cat:it.cat, dur:it.dur }],
-    estTotal: it.min, status: "pendiente"
+    items, estTotal: items.reduce((s,i)=> s+i.min*i.qty, 0), status: "pendiente", confirmed: true
   };
+  Notify.ignore(booking.id);
   Data.put("bookings", booking);
   closeModal("quick");
-  toast("✓ Cita agendada");
+  toast(`✓ Cita agendada · ${dayLabel(date)} ${fmt12(time)}`);
 }
 
 /* ---------- DETALLE DE CITA ---------- */
+function statusPill(s, b){
+  if(b && isBlock(b)) return `<span class="pill lock">Bloqueo</span>`;
+  if(s==="pendiente" && b && b.confirmed) return `<span class="pill done">Confirmada</span>`;
+  const map = { pendiente:["wait","Pendiente"], cobrada:["paid","Cobrada"], cancelada:["cancel","Cancelada"], noshow:["noshow","No asistió"] };
+  const [c,l] = map[s] || ["wait", s];
+  return `<span class="pill ${c}">${l}</span>`;
+}
 function openCitaDetail(id){
   const b = B().find(x=>x.id===id); if(!b) return;
   const dt = isoToDate(b.date);
   const dayName = DAYS_ES[(dt.getDay()+6)%7];
-  const cl = Data.get("clients").find(x=> x.id===b.clientId)
-          || Data.get("clients").find(x=> b.client.phone && normalizePhone(x.phone)===normalizePhone(b.client.phone));
-  document.getElementById("citaBody").innerHTML = `
-    <div class="cita-detail-row"><span class="lbl">Cliente</span><strong>${b.client.name}</strong></div>
-    <div class="cita-detail-row"><span class="lbl">Teléfono</span>
-      ${b.client.phone?`<a href="${waLink(b.client.phone,'Hola '+b.client.name+', te escribo de '+CONFIG.businessName)}" target="_blank" style="text-decoration:none">📱 ${b.client.phone}</a>`:'<span class="muted">—</span>'}</div>
-    ${cl?`<div class="cita-detail-row"><span class="lbl">Historial</span><span>${(+cl.visits||0)} visita(s)</span></div>`:""}
-    ${cl&&cl.note?`<div class="cita-detail-row"><span class="lbl">Diagnóstico</span><span style="text-align:right">${cl.note}</span></div>`:""}
-    <div class="cita-detail-row"><span class="lbl">Día</span><span>${dayName}, ${fmtDate(b.date)}</span></div>
-    <div class="cita-detail-row"><span class="lbl">Horario</span><strong>${b.time||"—"}${b.end?" – "+b.end:""} <span class="muted" style="font-weight:400">(${durLabel(b.dur)})</span></strong></div>
-    <div class="cita-detail-row"><span class="lbl">Atiende</span><span>${b.staffName||"—"}</span></div>
-    <div class="cita-detail-row"><span class="lbl">Servicios</span><span style="text-align:right">${b.items.map(i=>`${i.qty}× ${i.name}`).join("<br>")}</span></div>
-    ${b.client.note?`<div class="cita-detail-row"><span class="lbl">Notas cita</span><span style="text-align:right">${b.client.note}</span></div>`:""}
-    <div class="cita-detail-row"><span class="lbl">Estimado</span><strong>${money(b.estTotal)}</strong></div>
-    <div class="cita-detail-row" style="border:0"><span class="lbl">Estado</span>${statusPill(b.status)}</div>`;
+  const body = document.getElementById("citaBody"), foot = document.getElementById("citaFoot");
+  document.getElementById("citaTitle").textContent = isBlock(b) ? "Horario bloqueado" : "Detalle de cita";
 
-  const foot = document.getElementById("citaFoot");
-  foot.innerHTML = `
-    ${b.status==="pendiente"?`<button class="btn" id="cdCobrar">Cobrar</button>`:""}
-    ${b.status==="pendiente"?`<button class="btn ghost" id="cdCancel">Cancelar cita</button>`:""}
-    <button class="btn danger" id="cdDelete">Eliminar</button>`;
+  if(isBlock(b)){
+    body.innerHTML = `
+      <div class="cita-detail-row"><span class="lbl">Motivo</span><strong>${esc(b.note||"Horario bloqueado")}</strong></div>
+      <div class="cita-detail-row"><span class="lbl">Día</span><span>${dayName}, ${fmtDate(b.date)}</span></div>
+      <div class="cita-detail-row" style="border:0"><span class="lbl">Horario</span><strong>${fmtRange12(b.time, endOf(b))}</strong></div>
+      <p class="muted" style="font-size:.82rem;margin:8px 0 0">Arrastra el bloqueo en el calendario para moverlo.</p>`;
+    foot.innerHTML = `<button class="btn soft" data-cd="move">📅 Mover</button><button class="btn danger" data-cd="delete">Quitar bloqueo</button>`;
+  } else {
+    const cl = Data.get("clients").find(x=> x.id===b.clientId)
+            || Data.get("clients").find(x=> b.client.phone && normalizePhone(x.phone)===normalizePhone(b.client.phone));
+    const hist = (b.history||[]).slice(-3).map(h=>{
+      const [fd,ft]=h.from.split(" "), [td,tt]=h.to.split(" ");
+      return `${fmtDate(fd)} ${fmt12(ft)} → ${fmtDate(td)} ${fmt12(tt)}`;
+    }).join("<br>");
+    body.innerHTML = `
+      <div class="cita-detail-row"><span class="lbl">Cliente</span><strong>${esc(b.client.name)}</strong></div>
+      <div class="cita-detail-row"><span class="lbl">Teléfono</span>
+        ${b.client.phone?`<a href="${waLink(b.client.phone,'Hola '+b.client.name+', te escribo de '+CONFIG.businessName)}" target="_blank" rel="noopener" style="text-decoration:none">📱 ${esc(b.client.phone)}</a>`:'<span class="muted">—</span>'}</div>
+      ${cl?`<div class="cita-detail-row"><span class="lbl">Historial</span><span>${(+cl.visits||0)} visita(s)</span></div>`:""}
+      ${cl&&cl.note?`<div class="cita-detail-row"><span class="lbl">Diagnóstico</span><span style="text-align:right">${esc(cl.note)}</span></div>`:""}
+      <div class="cita-detail-row"><span class="lbl">Día</span><span>${dayName}, ${fmtDate(b.date)}</span></div>
+      <div class="cita-detail-row"><span class="lbl">Horario</span><strong>${fmtRange12(b.time, endOf(b))} <span class="muted" style="font-weight:400">(${durLabel(b.dur)})</span></strong></div>
+      <div class="cita-detail-row"><span class="lbl">Atiende</span><span>${esc(b.staffName||"—")}</span></div>
+      <div class="cita-detail-row"><span class="lbl">Servicios</span><span style="text-align:right">${(b.items||[]).map(i=>`${i.qty}× ${esc(i.name)}`).join("<br>")}</span></div>
+      ${b.client.note?`<div class="cita-detail-row"><span class="lbl">Notas cita</span><span style="text-align:right">${esc(b.client.note)}</span></div>`:""}
+      ${hist?`<div class="cita-detail-row"><span class="lbl">Cambios</span><span class="muted" style="text-align:right;font-size:.85rem">${hist}</span></div>`:""}
+      <div class="cita-detail-row"><span class="lbl">Origen</span><span>${b.source==="web"?"Página web":b.source==="admin"?"Administrador":"—"}${b.remindedAt?' · <span class="muted">recordatorio enviado</span>':""}</span></div>
+      <div class="cita-detail-row"><span class="lbl">Estimado</span><strong>${money(b.estTotal)}</strong></div>
+      <div class="cita-detail-row" style="border:0"><span class="lbl">Estado</span>${statusPill(b.status, b)}</div>
+      ${b.status==="pendiente"?`
+      <div class="cd-actions">
+        <button class="btn soft sm" data-cd="confirm">${b.confirmed?"↺ Quitar confirmación":"✓ Confirmar"}</button>
+        <button class="btn soft sm" data-cd="move">📅 Reprogramar</button>
+        <button class="btn soft sm" data-cd="tomorrow">⏭ Pasar a mañana</button>
+        ${b.client.phone?`<button class="btn soft sm" data-cd="remind">💬 Recordatorio</button>`:""}
+        <button class="btn soft sm" data-cd="noshow">🚫 No asistió</button>
+        <button class="btn soft sm" data-cd="cancel">✕ Cancelar cita</button>
+      </div>`:""}
+      ${(b.status==="cancelada"||b.status==="noshow")?`<div class="cd-actions"><button class="btn soft sm" data-cd="restore">↺ Restaurar cita</button></div>`:""}`;
+    foot.innerHTML = `
+      <button class="btn danger" data-cd="delete">Eliminar</button>
+      ${b.status==="pendiente"?`<button class="btn" data-cd="cobrar">Cobrar</button>`:""}`;
+  }
   openModal("cita");
 
-  if(document.getElementById("cdCobrar")) document.getElementById("cdCobrar").onclick = ()=>{ closeModal("cita"); openCobro(b.id); };
-  if(document.getElementById("cdCancel")) document.getElementById("cdCancel").onclick = ()=>{
-    Data.put("bookings", { ...b, status:"cancelada" }); closeModal("cita"); toast("Cita cancelada");
-  };
-  document.getElementById("cdDelete").onclick = ()=>{
-    Data.remove("bookings", b.id); closeModal("cita"); toast("Cita eliminada");
-  };
+  document.querySelectorAll("#citaMask [data-cd]").forEach(el=> el.onclick = ()=> citaAction(el.dataset.cd, b));
+}
+function citaAction(act, b){
+  const put = (changes, msg)=>{ Data.put("bookings", { ...b, ...changes }); closeModal("cita"); if(msg) toast(msg); };
+  switch(act){
+    case "cobrar":  closeModal("cita"); openCobro(b.id); break;
+    case "confirm": put({ confirmed:!b.confirmed }, b.confirmed ? "Confirmación quitada" : "✓ Cita confirmada"); break;
+    case "move":    closeModal("cita"); openMove(b.id); break;
+    case "tomorrow":{
+      const d = addDaysISO(b.date, 1);
+      if(hasClash(B(), d, b.time, b.dur, b.staffId, b.id)){ toast("Mañana a esa hora ya está ocupado — usa Reprogramar"); return; }
+      closeModal("cita"); moveBooking(b, d, b.time); break;
+    }
+    case "remind":  closeModal("cita"); sendReminder(b.id); break;
+    case "noshow":  if(confirm(`¿Marcar que ${b.client.name} no asistió?`)) put({ status:"noshow" }, "Marcada como no asistió"); break;
+    case "cancel":  if(confirm(`¿Cancelar la cita de ${b.client.name}?`)) put({ status:"cancelada", cancelledAt:new Date().toISOString() }, "Cita cancelada"); break;
+    case "restore":
+      if(hasClash(B(), b.date, b.time, b.dur, b.staffId, b.id)){ toast("Ese horario ya está ocupado — reprograma la cita"); return; }
+      put({ status:"pendiente" }, "Cita restaurada"); break;
+    case "delete":
+      if(confirm(isBlock(b) ? "¿Quitar este bloqueo?" : `¿Eliminar la cita de ${b.client.name}? No se puede deshacer.`)){
+        Data.remove("bookings", b.id); closeModal("cita"); toast(isBlock(b) ? "Bloqueo quitado" : "Cita eliminada");
+      }
+      break;
+  }
+}
+window.LumeOpenCita = (id)=>{ goPanel("agenda"); openCitaDetail(id); };
+
+/* ---------- recordatorio por WhatsApp ---------- */
+function sendReminder(id){
+  const b = B().find(x=> x.id===id); if(!b || !b.client.phone) return;
+  window.open(waLink(b.client.phone, reminderText(b)), "_blank");
+  Data.put("bookings", { ...b, remindedAt:new Date().toISOString() });
+}
+
+/* ---------- REPROGRAMAR ---------- */
+let moveId = null;
+function openMove(id){
+  const b = B().find(x=> x.id===id); if(!b) return;
+  moveId = id;
+  document.getElementById("mvInfo").innerHTML = `<strong>${esc(isBlock(b)?(b.note||"Bloqueo"):b.client.name)}</strong> · ahora: ${dayShort(b.date)}, ${fmtRange12(b.time, endOf(b))}`;
+  document.getElementById("mvDate").value = b.date;
+  document.getElementById("mvDate").min = todayISO();
+  document.getElementById("mvTime").value = "";
+  renderMoveSlots();
+  openModal("move");
+}
+function renderMoveSlots(){
+  const b = B().find(x=> x.id===moveId); if(!b) return;
+  const date = document.getElementById("mvDate").value, mvTime = document.getElementById("mvTime");
+  const box = document.getElementById("mvSlots");
+  if(!date){ box.innerHTML = '<div class="muted" style="font-size:.85rem">Elige el día.</div>'; return; }
+  const slots = availableSlots(B(), date, +b.dur||60, b.staffId, b.id);
+  if(mvTime.value && !slots.includes(mvTime.value)) mvTime.value = "";
+  if(!slots.length){ box.innerHTML = '<div class="muted" style="font-size:.85rem">No hay horarios disponibles ese día.</div>'; return; }
+  box.innerHTML = slotGroupsHTML(slots, mvTime.value, "mvslot");
+  box.querySelectorAll("[data-mvslot]").forEach(bn=> bn.onclick=()=>{
+    mvTime.value = bn.dataset.mvslot;
+    box.querySelectorAll(".slot-btn").forEach(x=>x.classList.remove("active"));
+    bn.classList.add("active");
+  });
+}
+function saveMove(){
+  const b = B().find(x=> x.id===moveId); if(!b) return;
+  const date = document.getElementById("mvDate").value, time = document.getElementById("mvTime").value;
+  if(!date || !time){ toast("Elige día y horario."); return; }
+  if(hasClash(B(), date, time, b.dur, b.staffId, b.id)){ toast("Ese horario se acaba de ocupar."); renderMoveSlots(); return; }
+  closeModal("move");
+  moveBooking(b, date, time);
+}
+
+/* ---------- CITAS DE MAÑANA (recordatorios) ---------- */
+function openTomorrow(){
+  goPanel("agenda");
+  renderTomorrow();
+  openModal("tm");
+}
+window.LumeOpenTomorrow = openTomorrow;
+function renderTomorrow(){
+  const d = addDaysISO(todayISO(), 1);
+  const list = B().filter(b=> b.date===d && isAppt(b) && blocksTime(b)).sort(byDateTime);
+  document.getElementById("tmTitle").textContent = `Mañana · ${isoToDate(d).toLocaleDateString("es-MX",{weekday:"long",day:"numeric",month:"long"})}`;
+  const box = document.getElementById("tmBody");
+  if(!list.length){ box.innerHTML = `<div class="empty-state"><div class="big">🌙</div>No tienes citas mañana.</div>`; return; }
+  box.innerHTML = `<p class="muted" style="margin:0 0 10px;font-size:.88rem">${list.length} ${list.length===1?"cita":"citas"} · envía un recordatorio por WhatsApp a cada clienta.</p>` +
+    list.map(b=>`
+    <div class="cart-line">
+      <div class="tm-time">${fmt12(b.time)}</div>
+      <div class="cl-main">
+        <div class="cl-name">${esc(b.client.name)} ${b.confirmed?'<span class="pill done">Confirmada</span>':""}</div>
+        <div class="cl-price">${esc(servicesText(b))} · ${durLabel(b.dur)}</div>
+      </div>
+      <div class="row-actions">
+        ${b.client.phone?`<button class="btn ${b.remindedAt?"soft":""} sm" data-tmr="${b.id}">${b.remindedAt?"✓ Enviado":"💬 Recordar"}</button>`:'<span class="muted" style="font-size:.8rem">sin teléfono</span>'}
+        ${!b.confirmed?`<button class="btn ghost sm" data-tmc="${b.id}" title="Marcar como confirmada">✓</button>`:""}
+      </div>
+    </div>`).join("");
+  box.querySelectorAll("[data-tmr]").forEach(el=> el.onclick = ()=>{ sendReminder(el.dataset.tmr); el.textContent="✓ Enviado"; el.classList.add("soft"); });
+  box.querySelectorAll("[data-tmc]").forEach(el=> el.onclick = ()=>{
+    const b = B().find(x=> x.id===el.dataset.tmc);
+    if(b){ Data.put("bookings", { ...b, confirmed:true }); el.remove(); toast("✓ Confirmada"); }
+  });
+}
+
+/* ---------- NOTIFICACIONES (configuración) ---------- */
+function openNotifSettings(){
+  const c = Notify.getConfig();
+  document.getElementById("ntBefore").value = String(c.before);
+  document.getElementById("ntNightly").checked = !!c.nightly;
+  document.getElementById("ntHour").value = String(c.nightlyHour);
+  document.getElementById("ntNew").checked = !!c.newBooking;
+  document.getElementById("ntSound").checked = !!c.sound;
+  renderNotifState();
+  openModal("nt");
+}
+function renderNotifState(){
+  const p = Notify.permission(), c = Notify.getConfig();
+  const st = document.getElementById("ntState"), btn = document.getElementById("ntEnable");
+  const on = p==="granted" && c.enabled;
+  st.className = "nt-state " + (on ? "on" : "off");
+  st.textContent = p==="unsupported" ? "Este navegador no permite notificaciones. Instala la app o usa Chrome/Safari actualizado."
+    : p==="denied" ? "Las notificaciones están bloqueadas. Actívalas en los permisos del navegador para este sitio."
+    : on ? "✓ Notificaciones activadas en este dispositivo" : "Notificaciones desactivadas en este dispositivo";
+  btn.textContent = on ? "Desactivar" : "Activar notificaciones";
+  btn.disabled = p==="unsupported" || p==="denied";
+  document.getElementById("notifBtn").classList.toggle("on", on);
+}
+async function toggleNotif(){
+  const c = Notify.getConfig();
+  if(Notify.permission()==="granted" && c.enabled){ Notify.setConfig({ enabled:false }); }
+  else {
+    const p = await Notify.enable();
+    if(p==="granted") toast("🔔 Notificaciones activadas");
+  }
+  renderNotifState();
+}
+function saveNotifSettings(){
+  Notify.setConfig({
+    before: +document.getElementById("ntBefore").value,
+    nightly: document.getElementById("ntNightly").checked,
+    nightlyHour: +document.getElementById("ntHour").value,
+    newBooking: document.getElementById("ntNew").checked,
+    sound: document.getElementById("ntSound").checked,
+  });
+  closeModal("nt");
+  toast("Preferencias guardadas");
+  Notify.check();
+}
+
+/* ---------- aviso con botones (deshacer, avisar…) ---------- */
+let actT;
+function actionToast(msg, actions){
+  let t = document.getElementById("actToast");
+  if(!t){ t = document.createElement("div"); t.id = "actToast"; t.className = "act-toast"; document.body.appendChild(t); }
+  t.innerHTML = `<span>${esc(msg)}</span>` + (actions||[]).map((a,i)=> `<button type="button" data-ai="${i}">${esc(a.label)}</button>`).join("");
+  t.querySelectorAll("[data-ai]").forEach(bn=> bn.onclick = ()=>{ t.classList.remove("show"); actions[+bn.dataset.ai].fn(); });
+  t.classList.add("show");
+  clearTimeout(actT); actT = setTimeout(()=> t.classList.remove("show"), 8000);
 }
 
 /* ============================================================
@@ -944,7 +1715,7 @@ function ticketText(sale){
   if(CONFIG.businessPhone) L.push("Tel: "+CONFIG.businessPhone);
   L.push("--------------------------------");
   L.push("TICKET #"+sale.ticketNo);
-  L.push(new Date(sale.createdAt).toLocaleString("es-MX"));
+  L.push(new Date(sale.createdAt).toLocaleString("es-MX",{dateStyle:"short",timeStyle:"short",hour12:true}));
   L.push("Cliente: "+sale.client.name);
   L.push("--------------------------------");
   sale.items.forEach(i=>{
@@ -989,7 +1760,7 @@ function renderCaja(){
   const day = document.getElementById("cajaDate").value || todayISO();
   const sales = S().filter(s=> s.date === day);
   const exps = E().filter(x=> x.date === day);
-  const bookings = B().filter(b=> b.status==="pendiente");
+  const bookings = B().filter(b=> b.status==="pendiente" && !isBlock(b) && b.date<=day);
 
   const income = sales.reduce((s,x)=>s+x.total,0);
   const gasto = exps.reduce((s,x)=>s+x.amount,0);
@@ -1011,8 +1782,8 @@ function renderCaja(){
     cobroBox.innerHTML = bookings.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).map(b=>`
       <div class="cart-line">
         <div class="cl-main">
-          <div class="cl-name">${b.client.name}</div>
-          <div class="cl-price">${fmtDate(b.date)} ${b.time||""} · ${b.items.length} servicio(s) · ${money(b.estTotal)}</div>
+          <div class="cl-name">${esc(b.client.name)}</div>
+          <div class="cl-price">${fmtDate(b.date)} ${fmt12(b.time)} · ${b.items.length} servicio(s) · ${money(b.estTotal)}</div>
         </div>
         <button class="btn sm" data-cobrar2="${b.id}">Cobrar</button>
       </div>`).join("");
@@ -1027,8 +1798,8 @@ function renderCaja(){
     salesBox.innerHTML = sales.slice().reverse().map(s=>`
       <div class="cart-line">
         <div class="cl-main">
-          <div class="cl-name">#${s.ticketNo} · ${s.client.name} ${methodPill(s.method)}</div>
-          <div class="cl-price">${new Date(s.createdAt).toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"})} · ${s.items.length} concepto(s)</div>
+          <div class="cl-name">#${s.ticketNo} · ${esc(s.client.name)} ${methodPill(s.method)}</div>
+          <div class="cl-price">${new Date(s.createdAt).toLocaleTimeString("es-MX",{hour:"numeric",minute:"2-digit",hour12:true})} · ${s.items.length} concepto(s)</div>
         </div>
         <div style="text-align:right">
           <div style="font-weight:700">${money(s.total)}</div>
@@ -1048,8 +1819,8 @@ function renderCaja(){
     expBox.innerHTML = exps.slice().reverse().map(x=>`
       <div class="cart-line">
         <div class="cl-main">
-          <div class="cl-name">${x.concept}</div>
-          <div class="cl-price">${x.category||""}</div>
+          <div class="cl-name">${esc(x.concept)}</div>
+          <div class="cl-price">${esc(x.category||"")}</div>
         </div>
         <div style="text-align:right">
           <div style="font-weight:700;color:var(--danger)">− ${money(x.amount)}</div>
@@ -1057,7 +1828,7 @@ function renderCaja(){
         </div>
       </div>`).join("");
     expBox.querySelectorAll("[data-delexp]").forEach(el=> el.onclick = ()=>{
-      Data.remove("expenses", el.dataset.delexp); toast("Gasto eliminado");
+      if(confirm("¿Eliminar este gasto?")){ Data.remove("expenses", el.dataset.delexp); toast("Gasto eliminado"); }
     });
   }
 }
@@ -1078,7 +1849,7 @@ function addExpense(){
    ============================================================ */
 function daysBetween(from, to){
   const out=[]; let d = new Date(from+"T00:00:00"); const end = new Date(to+"T00:00:00");
-  while(d<=end){ out.push(d.toISOString().slice(0,10)); d.setDate(d.getDate()+1); if(out.length>62) break; }
+  while(d<=end){ out.push(dateToISO(d)); d.setDate(d.getDate()+1); if(out.length>62) break; }
   return out;
 }
 function renderReportes(){
@@ -1089,7 +1860,8 @@ function renderReportes(){
 
   const sales = S().filter(s=> inRange(s.date));
   const exps = E().filter(x=> inRange(x.date));
-  const bookings = B().filter(b=> inRange(b.date) && b.status!=="cancelada");
+  const bookings = B().filter(b=> inRange(b.date) && !isBlock(b) && blocksTime(b));
+  const noShows = B().filter(b=> inRange(b.date) && b.status==="noshow").length;
 
   const income = sales.reduce((s,x)=>s+x.total,0);
   const gasto = exps.reduce((s,x)=>s+x.amount,0);
@@ -1101,7 +1873,8 @@ function renderReportes(){
     <div class="stat"><div class="k">Balance neto</div><div class="v sm">${money(income-gasto)}</div></div>
     <div class="stat"><div class="k">Citas</div><div class="v">${bookings.length}</div></div>
     <div class="stat"><div class="k">Cobros</div><div class="v">${sales.length}</div></div>
-    <div class="stat"><div class="k">Ticket promedio</div><div class="v sm">${money(avg)}</div></div>`;
+    <div class="stat"><div class="k">Ticket promedio</div><div class="v sm">${money(avg)}</div></div>
+    <div class="stat"><div class="k">No asistieron</div><div class="v">${noShows}</div></div>`;
 
   // chart citas por día
   const bookingsPerDay = days.map(d=> bookings.filter(b=>b.date===d).length);
@@ -1163,7 +1936,7 @@ function renderInventario(){
       <thead><tr><th>Producto</th><th class="center">Cantidad</th><th class="center">Mínimo</th><th class="right">Costo u.</th><th class="right">Valor</th><th class="right">Acciones</th></tr></thead>
       <tbody>${inv.map(p=>`
         <tr>
-          <td>${p.name} ${p.qty<=p.min?'<span class="pill wait">Bajo</span>':''}</td>
+          <td>${esc(p.name)} ${p.qty<=p.min?'<span class="pill wait">Bajo</span>':''}</td>
           <td class="center">
             <div class="stepper" style="transform:scale(.8)">
               <button data-decq="${p.id}">−</button><span class="qty">${p.qty}</span><button data-incq="${p.id}">+</button>
@@ -1184,7 +1957,7 @@ function renderInventario(){
   document.querySelectorAll("[data-decq]").forEach(b=> b.onclick=()=>chgQty(b.dataset.decq,-1));
   document.querySelectorAll("[data-editp]").forEach(b=> b.onclick=()=>openProd(b.dataset.editp));
   document.querySelectorAll("[data-delp]").forEach(b=> b.onclick=()=>{
-    Data.remove("inventory", b.dataset.delp); toast("Producto eliminado");
+    if(confirm("¿Eliminar este producto?")){ Data.remove("inventory", b.dataset.delp); toast("Producto eliminado"); }
   });
 }
 function chgQty(id, d){
@@ -1241,16 +2014,20 @@ function renderClientas(){
       <thead><tr><th>Nombre</th><th>Teléfono</th><th class="center">Visitas</th><th>Última</th><th>Diagnóstico / nota</th><th></th></tr></thead>
       <tbody>${list.map(c=>`
         <tr>
-          <td><strong>${c.name}</strong></td>
-          <td>${c.phone?`<a class="muted" href="${waLink(c.phone,'Hola '+c.name+', te escribo de '+CONFIG.businessName)}" target="_blank" style="text-decoration:none">📱 ${c.phone}</a>`:'<span class="muted">—</span>'}</td>
+          <td><strong>${esc(c.name)}</strong></td>
+          <td>${c.phone?`<a class="muted" href="${waLink(c.phone,'Hola '+c.name+', te escribo de '+CONFIG.businessName)}" target="_blank" style="text-decoration:none">📱 ${esc(c.phone)}</a>`:'<span class="muted">—</span>'}</td>
           <td class="center">${(+c.visits||0)}</td>
           <td>${c.lastVisit?fmtDate(c.lastVisit):'—'}</td>
-          <td class="muted" style="max-width:240px">${c.note||''}</td>
-          <td class="right"><button class="btn ghost sm" data-client="${c.id}">Ver / editar</button></td>
+          <td class="muted" style="max-width:240px">${esc(c.note||'')}</td>
+          <td class="right"><div class="row-actions"><button class="btn soft sm" data-book="${c.id}">+ Cita</button><button class="btn ghost sm" data-client="${c.id}">Ver / editar</button></div></td>
         </tr>`).join("")}
       </tbody>
     </table></div>`;
   document.querySelectorAll("[data-client]").forEach(el=> el.onclick=()=> openClient(el.dataset.client));
+  document.querySelectorAll("[data-book]").forEach(el=> el.onclick=()=>{
+    const c = Data.get("clients").find(x=> x.id===el.dataset.book); if(!c) return;
+    goPanel("agenda"); openQuickAdd(todayISO(), "", { name:c.name, phone:c.phone, note:c.note });
+  });
 }
 function openClient(id){
   const c = Data.get("clients").find(x=>x.id===id); if(!c) return;
@@ -1271,6 +2048,7 @@ function saveClient(){
 }
 function deleteClient(){
   const id = document.getElementById("clId").value;
+  if(!confirm("¿Eliminar esta clienta? Sus citas no se borran.")) return;
   Data.remove("clients", id); closeModal("client"); toast("Clienta eliminada");
 }
 
@@ -1278,7 +2056,19 @@ function deleteClient(){
    Comprobación automática de sesión — AL FINAL, cuando todo
    (variables const/let y funciones) ya está definido.
    ============================================================ */
-if(isAuthed()) showApp();
+document.getElementById("gate").style.display = "none";   // se muestra solo si no hay sesión
+Auth.onChange(async user=>{
+  if(user && isAdminUser(user)){ showApp(); return; }
+  if(user){                                                // cuenta sin permiso de administrador
+    await Auth.signOut();
+    loginError("Esta cuenta no tiene acceso al administrador.");
+  }
+  if(appStarted){ location.reload(); return; }              // la sesión se cerró
+  document.getElementById("gate").style.display = "";
+  if(!Auth.available()) loginError("Sin conexión a Firebase. Revisa tu internet y recarga la página.");
+  window.LumeLoader && LumeLoader.done();
+  setTimeout(()=> document.getElementById("user").focus(), 500);
+});
 </script>
 </body>
 </html>

@@ -2,13 +2,23 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>LUMÉ Beauty Room</title>
 <meta name="description" content="LUMÉ Beauty Room — uñas, pestañas, cejas y más. Agenda tu cita.">
-<link rel="icon" href="logo.png">
+<meta name="theme-color" content="#efece4">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="LUMÉ">
+<meta property="og:title" content="LUMÉ Beauty Room">
+<meta property="og:description" content="Uñas, pestañas, cejas y más. Agenda tu cita en línea.">
+<meta property="og:image" content="icon-512.png">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <script src="loader.js"></script>
   <main class="hero">
     <!-- Botones superiores derecha: WhatsApp + Instagram -->
     <div class="topbar">
@@ -21,13 +31,18 @@
     </div>
 
     <!-- Logo -->
-    <img class="hero-logo" src="logo.png" alt="LUMÉ Beauty Room">
+    <img class="hero-logo" src="logo-crop.png" alt="LUMÉ Beauty Room">
     <div class="hero-tag">Nails · Lashes · Brows · Hair</div>
 
     <!-- Botón central: Agendar -->
     <div class="hero-cta">
       <a class="btn xl" href="agendar.html">Agendar</a>
     </div>
+    <div class="hero-info">
+      <span id="hoursTxt"></span>
+      <a id="mapLink" href="#" target="_blank" rel="noopener">📍 Cómo llegar</a>
+    </div>
+    <button class="btn soft sm hero-install" data-install hidden>📲 Instalar app</button>
 
     <div class="hero-foot">
       <a href="admin.html">Administrador</a>
@@ -35,9 +50,12 @@
   </main>
 
   <script src="app.js"></script>
+  <script src="pwa.js"></script>
   <script>
     document.getElementById("waBtn").href = waLink(CONFIG.whatsapp, "¡Hola! Me gustaría agendar una cita en LUMÉ Beauty Room ✨");
-    document.getElementById("igBtn").href = "https://instagram.com/" + CONFIG.instagram;
+    document.getElementById("igBtn").href = igLink(CONFIG.instagram);
+    document.getElementById("hoursTxt").textContent = `Horario: ${fmtHour12(CONFIG.openHour)} – ${fmtHour12(CONFIG.closeHour)}`;
+    document.getElementById("mapLink").href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(CONFIG.businessAddress);
   </script>
 </body>
 </html>
