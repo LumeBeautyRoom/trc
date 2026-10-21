@@ -829,7 +829,7 @@ function renderAgenda(){
   if(agView==="list") renderList(); else renderCalendar();
 }
 
-function initials(name){ return (name||"?").trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join("").toUpperCase() || "?"; }
+function initials(name){ return String(name||"?").trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join("").toUpperCase() || "?"; }
 function renderStaffBar(){
   const staff = CONFIG.staff || [];
   const bar = document.getElementById("staffBar");
@@ -1434,9 +1434,8 @@ function openCitaDetail(id){
       <p class="muted" style="font-size:.82rem;margin:8px 0 0">Arrastra el bloqueo en el calendario para moverlo.</p>`;
     foot.innerHTML = `<button class="btn soft" data-cd="move">📅 Mover</button><button class="btn danger" data-cd="delete">Quitar bloqueo</button>`;
   } else {
-    const cl = Data.get("clients").find(x=> x.id===b.clientId)
-            || Data.get("clients").find(x=> b.client.phone && normalizePhone(x.phone)===normalizePhone(b.client.phone));
-    const hist = (b.history||[]).slice(-3).map(h=>{
+    const cl = clientOfBooking(b);
+    const hist =(b.history||[]).slice(-3).map(h=>{
       const [fd,ft]=h.from.split(" "), [td,tt]=h.to.split(" ");
       return `${fmtDate(fd)} ${fmt12(ft)} → ${fmtDate(td)} ${fmt12(tt)}`;
     }).join("<br>");
@@ -1479,8 +1478,7 @@ function citaAction(act, b){
   switch(act){
     case "cobrar":  closeModal("cita"); openCobro(b.id); break;
     case "client":{
-      const cl = Data.get("clients").find(x=> x.id===b.clientId)
-              || Data.get("clients").find(x=> b.client.phone && normalizePhone(x.phone)===normalizePhone(b.client.phone));
+      const cl = clientOfBooking(b);
       if(cl){ closeModal("cita"); goPanel("clientas"); openClient(cl.id); }
       break;
     }
@@ -1748,6 +1746,8 @@ function doCobro(){
     method: coMethod
   };
   Data.put("sales", sale);
+  // venta rápida con nombre: que la clienta quede registrada con su ficha
+  if(!bookingId && name!=="Cliente") upsertClient(name, phone, "");
 
   if(bookingId){
     const bk = B().find(x=>x.id===bookingId);
@@ -2055,7 +2055,7 @@ const CONDITIONS = [
   "Quimioterapia / tratamiento oncológico", "Problemas de tiroides",
 ];
 const SOURCES = ["Instagram","Facebook","TikTok","Google","Recomendación","Pasaba por aquí","Otro"];
-const lc = (s)=> (s||"").trim().toLowerCase();
+const lc = (s)=> String(s==null?"":s).trim().toLowerCase();
 
 /* ---- cumpleaños y edad ---- */
 function ageOf(birth){
@@ -2095,11 +2095,73 @@ function healthAlertHTML(c){
 /* ---- todo lo que ha hecho una clienta ---- */
 function clientBookings(c){
   const ph = normalizePhone(c.phone), nm = lc(c.name);
+  const ids = new Set(Data.get("clients").map(x=> x.id));
   return B().filter(b=> !isBlock(b) && (
     b.clientId===c.id ||
     (ph && normalizePhone(b.client.phone)===ph) ||
-    (!ph && !b.clientId && lc(b.client.name)===nm)
+    (!ph && (!b.clientId || !ids.has(b.clientId)) && lc(b.client.name)===nm)
   ));
+}
+
+/* ---- clientas que solo existen en citas o cobros (sin ficha guardada) ----
+   p. ej. ventas rápidas de Caja, citas de antes de que existieran las fichas
+   o fichas que se borraron. Se muestran en la lista con su historial y al
+   guardar se crea su ficha. */
+function orphanClients(){
+  const clients = Data.get("clients");
+  const ids = new Set(clients.map(c=> c.id));
+  const phones = new Set(clients.map(c=> normalizePhone(c.phone)).filter(Boolean));
+  const names = new Set(clients.map(c=> lc(c.name)).filter(Boolean));
+  const bkIds = new Set(B().map(b=> b.id));
+  const t = todayISO(), map = new Map();
+  const add = (name, phone, date, created, counts)=>{
+    name = String(name||"").trim();
+    const ph = normalizePhone(phone);
+    if(name.length < 2 || lc(name)==="cliente") return;
+    if(ph ? phones.has(ph) : names.has(lc(name))) return;
+    const key = ph || "n:" + lc(name);
+    let v = map.get(key);
+    if(!v){ v = { id:"v:"+key, name, phone:String(phone||"").trim(), note:"", virtual:true, visits:0, lastVisit:"", createdAt:"", conditions:[] }; map.set(key, v); }
+    if(!v.phone && ph) v.phone = String(phone).trim();
+    if(counts) v.visits++;
+    if(date && date<=t && date>v.lastVisit) v.lastVisit = date;
+    const c0 = created || (date ? date+"T12:00:00.000Z" : "");
+    if(c0 && (!v.createdAt || c0 < v.createdAt)) v.createdAt = c0;
+  };
+  B().forEach(b=>{
+    if(isBlock(b) || (b.clientId && ids.has(b.clientId))) return;
+    add(b.client.name, b.client.phone, b.date, b.createdAt, blocksTime(b));
+  });
+  S().forEach(s=>{
+    if(s.bookingId && bkIds.has(s.bookingId)) return;      // ya contada por su cita
+    add(s.client.name, s.client.phone, s.date, s.createdAt, true);
+  });
+  return [...map.values()];
+}
+// la clienta de una cita: por su ficha, su teléfono o su nombre (o la que aún no tiene ficha)
+function clientOfBooking(b){
+  const all = Data.get("clients"), ph = normalizePhone(b.client.phone), nm = lc(b.client.name);
+  return all.find(x=> x.id===b.clientId)
+      || (ph && all.find(x=> normalizePhone(x.phone)===ph))
+      || (!ph && all.find(x=> lc(x.name)===nm))
+      || orphanClients().find(v=> ph ? normalizePhone(v.phone)===ph : lc(v.name)===nm)
+      || null;
+}
+// busca una clienta por id (incluye las que aún no tienen ficha)
+function clientById(id){
+  if(!id) return null;
+  if(String(id).startsWith("v:")) return orphanClients().find(c=> c.id===id) || null;
+  return Data.get("clients").find(x=> x.id===id) || null;
+}
+// crea la ficha de todas las clientas que solo están en citas y cobros
+function importOrphans(){
+  const list = orphanClients();
+  if(!list.length) return;
+  if(!confirm(`¿Crear la ficha de ${list.length} clienta(s) que están en tus citas y cobros? Después podrás llenar su fecha de nacimiento y ficha médica.`)) return;
+  const now = new Date().toISOString();
+  list.forEach(v=> Data.put("clients", { id:uid(), name:v.name, phone:v.phone, note:"", visits:v.visits,
+    lastVisit:v.lastVisit, createdAt:v.createdAt||now, importedAt:now }));
+  toast(`✓ ${list.length} ficha(s) creadas`);
 }
 function clientSales(c, bks){
   const ids = new Set(bks.map(b=> b.id)), ph = normalizePhone(c.phone), nm = lc(c.name);
@@ -2135,7 +2197,8 @@ function fmtStamp(isoStamp){
 
 /* ---------- lista de clientas ---------- */
 function renderClientas(){
-  const all = Data.get("clients");
+  const orphans = orphanClients();
+  const all = [...Data.get("clients"), ...orphans];
   const term = lc(document.getElementById("clSearch").value);
   const t = todayISO(), month = t.slice(5,7);
 
@@ -2151,6 +2214,7 @@ function renderClientas(){
     const m = new Map();
     (byId[c.id]||[]).forEach(b=> m.set(b.id,b));
     (byPhone[normalizePhone(c.phone)]||[]).forEach(b=> m.set(b.id,b));
+    if(!normalizePhone(c.phone)) clientBookings(c).forEach(b=> m.set(b.id,b));   // sin teléfono: por nombre
     return [...m.values()];
   };
 
@@ -2167,7 +2231,12 @@ function renderClientas(){
     <div class="stat"><div class="k">Clientas</div><div class="v">${all.length}</div></div>
     <div class="stat"><div class="k">Nuevas este mes</div><div class="v">${newOnes}</div></div>
     <div class="stat"><div class="k">Cumpleaños este mes</div><div class="v">${bdays}</div></div>
-    <div class="stat"><div class="k">Con alergias / cuidados</div><div class="v">${alerts}</div></div>`;
+    <div class="stat"><div class="k">Con alergias / cuidados</div><div class="v">${alerts}</div></div>
+    ${orphans.length?`<div class="cl-banner">
+      <span>📋 Encontré <b>${orphans.length}</b> clienta(s) en tus citas y cobros que aún no tienen ficha. Ya puedes abrir su historial; toca el botón para crear todas sus fichas.</span>
+      <button class="btn sm" type="button" id="clImport">Crear sus fichas</button></div>`:""}`;
+  const imp = document.getElementById("clImport");
+  if(imp) imp.onclick = importOrphans;
 
   if(!list.length){
     document.getElementById("clList").innerHTML = `<div class="empty-state"><div class="big">👤</div>${term?"Sin resultados.":"Aún no hay clientas registradas. Se guardan solas al agendar."}</div>`;
@@ -2182,15 +2251,15 @@ function renderClientas(){
         const next = active.find(b=> b.date>=t && b.status==="pendiente");
         const db = daysToBirthday(c.birthDate);
         return `
-        <tr data-client="${c.id}" tabindex="0">
+        <tr data-client="${esc(c.id)}" tabindex="0">
           <td><div class="cl-cell"><span class="cl-av">${esc(initials(c.name))}</span>
-            <div><strong>${esc(c.name)}</strong>${db!=null&&db<=7?` <span title="${esc(birthdayLabel(c.birthDate))}">🎂</span>`:""}${hasHealthAlert(c)?' <span class="pill cancel" title="Alergias o cuidados">⚠</span>':""}
+            <div><strong>${esc(c.name)}</strong>${c.virtual?' <span class="pill wait" title="Está en tus citas o cobros pero aún no tiene ficha">Sin ficha</span>':""}${db!=null&&db<=7?` <span title="${esc(birthdayLabel(c.birthDate))}">🎂</span>`:""}${hasHealthAlert(c)?' <span class="pill cancel" title="Alergias o cuidados">⚠</span>':""}
             ${c.birthDate?`<div class="muted" style="font-size:.78rem">${ageOf(c.birthDate)} años</div>`:""}</div></div></td>
           <td>${c.phone?esc(c.phone):'<span class="muted">—</span>'}</td>
           <td class="center">${active.length}</td>
           <td>${c.lastVisit?fmtDate(c.lastVisit):'—'}</td>
           <td>${next?`${dayShort(next.date)} · ${fmt12(next.time)}`:'<span class="muted">—</span>'}</td>
-          <td class="right"><div class="row-actions"><button class="btn soft sm" data-book="${c.id}">+ Cita</button></div></td>
+          <td class="right"><div class="row-actions"><button class="btn soft sm" data-book="${esc(c.id)}">+ Cita</button></div></td>
         </tr>`;}).join("")}
       </tbody>
     </table></div>`;
@@ -2201,7 +2270,7 @@ function renderClientas(){
   document.querySelectorAll("#clList [data-book]").forEach(el=> el.onclick=()=> bookForClient(el.dataset.book));
 }
 function bookForClient(id){
-  const c = Data.get("clients").find(x=> x.id===id); if(!c) return;
+  const c = clientById(id); if(!c) return;
   closeModal("client");
   goPanel("agenda");
   openQuickAdd(todayISO(), "", { name:c.name, phone:c.phone, note:c.note });
@@ -2235,16 +2304,21 @@ function fillClientForms(c){
 }
 function openClient(id, tab){
   const isNew = !id;
-  const c = isNew ? { name:"", phone:"" } : Data.get("clients").find(x=>x.id===id);
-  if(!c) return;
-  document.getElementById("clId").value = id || "";
-  document.getElementById("clientMask").classList.toggle("is-new", isNew);
-  fillClientForms(c);
-  renderClientProfile();
-  setClientTab(tab || (isNew ? "datos" : "resumen"));
-  document.getElementById("clDelete").hidden = isNew;
-  openModal("client");
-  if(isNew) setTimeout(()=> document.getElementById("clName").focus(), 150);
+  const c = isNew ? { name:"", phone:"" } : clientById(id);
+  if(!c){ toast("No encontré esa clienta. Recarga la página e intenta de nuevo."); return; }
+  try{
+    document.getElementById("clId").value = id || "";
+    document.getElementById("clientMask").classList.toggle("is-new", isNew);
+    fillClientForms(c);
+    renderClientProfile();
+    setClientTab(tab || (isNew ? "datos" : "resumen"));
+    document.getElementById("clDelete").hidden = isNew || !!c.virtual;
+    openModal("client");
+    if(isNew) setTimeout(()=> document.getElementById("clName").focus(), 150);
+  }catch(e){
+    console.error("[LUMÉ] Error al abrir la ficha", c, e);
+    toast("No se pudo abrir la ficha: " + e.message);
+  }
 }
 function renderClientProfile(){
   const id = document.getElementById("clId").value;
@@ -2253,9 +2327,10 @@ function renderClientProfile(){
     hero.innerHTML = `<span class="cl-av lg">+</span><div><h3>Nueva clienta</h3><div class="muted" style="font-size:.85rem">Llena sus datos y su ficha médica</div></div>`;
     return;
   }
-  const c = Data.get("clients").find(x=> x.id===id); if(!c) return;
+  const c = clientById(id); if(!c) return;
   const k = clientInsights(c);
   const chips = [];
+  if(c.virtual) chips.push(`<span class="cl-chip warn">Sin ficha: llena Datos o Ficha médica y guarda para crearla</span>`);
   if(c.birthDate) chips.push(`<span class="cl-chip">${esc(birthdayLabel(c.birthDate))}</span>`);
   if(k.since) chips.push(`<span class="cl-chip">Clienta desde ${monthYear(k.since)}</span>`);
   if(c.source) chips.push(`<span class="cl-chip">Nos conoció por ${esc(c.source)}</span>`);
@@ -2340,8 +2415,13 @@ function renderClientProfile(){
 }
 function saveClient(){
   const id = document.getElementById("clId").value;
-  const old = id ? Data.get("clients").find(x=>x.id===id) : null;
+  let old = id ? clientById(id) : null;
   if(id && !old) return;
+  // clienta sin ficha: se crea su ficha nueva con lo que ya sabemos de ella
+  const base = old && old.virtual
+    ? { id:uid(), visits:old.visits, lastVisit:old.lastVisit, createdAt:old.createdAt||new Date().toISOString() }
+    : null;
+  if(base) old = null;
   const v = (k)=> document.getElementById(k).value.trim();
   const name = v("clName");
   if(name.length<2){ setClientTab("datos"); toast("Escribe el nombre."); return; }
@@ -2351,7 +2431,7 @@ function saveClient(){
                      (old.conditions||[]).join("|")!==conditions.join("|");
   const now = new Date().toISOString();
   const data = {
-    ...(old || { id:uid(), visits:0, createdAt:now }),
+    ...(old || base || { id:uid(), visits:0, createdAt:now }),
     name, phone:v("clPhone"), note:v("clNote"),
     birthDate:v("clBirth"), email:v("clEmail"), instagram:v("clIg").replace(/^@/,""),
     source:v("clSource"), prefs:v("clPrefs"),

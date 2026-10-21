@@ -31,7 +31,38 @@ const Data = (function(){
   const readyP = new Promise(r=> readyResolve = r);
 
   const lkey = (c)=> "lume_" + c;
-  function loadLocal(){ cols.forEach(c=> state[c] = Store.get(lkey(c), [])); }
+
+  // Datos viejos o capturados a mano: les ponemos lo mínimo para que la app no falle
+  // (id del documento, textos como texto, fechas como "AAAA-MM-DD…").
+  const txt = (v)=> v==null ? "" : String(v);
+  function stamp(v){
+    if(!v) return "";
+    if(typeof v === "string") return v;
+    if(typeof v.toDate === "function") return v.toDate().toISOString();   // Timestamp de Firestore
+    if(typeof v.seconds === "number") return new Date(v.seconds*1000).toISOString();
+    const d = new Date(v);
+    return isNaN(d) ? "" : d.toISOString();
+  }
+  // docId = id del documento en Firestore (manda sobre el campo "id", que en datos viejos
+  // puede faltar o venir como número); fallbackId = solo si el dato no trae id (modo local)
+  function fix(c, x, docId, fallbackId){
+    if(docId) x.id = docId;
+    else if(x.id==null || x.id==="") x.id = fallbackId;
+    else x.id = String(x.id);
+    if(c==="clients"){
+      x.name = txt(x.name || x.nombre); x.phone = txt(x.phone || x.telefono || x.tel);
+      x.note = txt(x.note); x.createdAt = stamp(x.createdAt); x.lastVisit = stamp(x.lastVisit).slice(0,10);
+      if(x.birthDate) x.birthDate = stamp(x.birthDate).slice(0,10);
+      if(!Array.isArray(x.conditions)) x.conditions = [];
+    } else if(c==="bookings" || c==="sales"){
+      const cl = (x.client && typeof x.client==="object") ? x.client : { name: txt(x.client) };
+      x.client = { ...cl, name: txt(cl.name), phone: txt(cl.phone), note: txt(cl.note) };
+      x.createdAt = stamp(x.createdAt);
+      if(!Array.isArray(x.items)) x.items = [];
+    }
+    return x;
+  }
+  function loadLocal(){ cols.forEach(c=> state[c] = (Store.get(lkey(c), []) || []).map((x,i)=> fix(c, x, null, "local"+i))); }
   function saveLocal(c){ Store.set(lkey(c), state[c]); }
 
   function init(){
@@ -69,7 +100,7 @@ const Data = (function(){
       list.forEach(c=>{
         db.collection(c).onSnapshot(
           snap=>{
-            state[c] = snap.docs.map(d=> d.data());
+            state[c] = snap.docs.map(d=> fix(c, d.data(), d.id));
             try{ saveLocal(c); }catch(e){}     // caché local de respaldo
             arrived(c);
             changeCb();

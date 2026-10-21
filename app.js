@@ -48,7 +48,7 @@ function fmtDate(iso){ if(!iso) return ""; const [y,m,d]=iso.split("-"); return 
 function fmtDateLong(iso){ if(!iso) return ""; const dt=new Date(iso+"T00:00:00"); return dt.toLocaleDateString("es-MX",{weekday:"long",day:"numeric",month:"long",year:"numeric"}); }
 function igLink(v){ v=(v||"").trim(); if(!v) return "#"; if(/^https?:\/\//i.test(v)) return v; return "https://instagram.com/"+v.replace(/^@/,""); }
 function waLink(number, text){ const n=(number||"").replace(/[^\d]/g,""); return `https://wa.me/${n}?text=${encodeURIComponent(text||"")}`; }
-function normalizePhone(p){ return (p||"").replace(/\D/g,""); }
+function normalizePhone(p){ return String(p==null?"":p).replace(/\D/g,""); }
 /* escapa texto antes de meterlo en HTML (evita que un nombre con <etiquetas> rompa la página) */
 function esc(v){ return String(v==null?"":v).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function addDaysISO(iso, n){ const d=new Date(iso+"T00:00:00"); d.setDate(d.getDate()+n); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
